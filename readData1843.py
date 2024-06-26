@@ -266,10 +266,10 @@ def readAndParseData18xx(Dataport, configParameters,filename):
         idX += 4
         subFrameNumber = np.matmul(byteBuffer[idX:idX+4],word)
         idX += 4
-        print(f"numdetectedobjs {numDetectedObj}, numTLVs: {numTLVs}")
+        # print(f"numdetectedobjs {numDetectedObj}, numTLVs: {numTLVs}")
         # Read the TLV messages
         for tlvIdx in range(numTLVs):
-            print(f"idx: {idX}, tlvidx: {tlvIdx}")
+            # print(f"idx: {idX}, tlvidx: {tlvIdx}")
             # word array to convert 4 bytes to a 32 bit number
             word = [1, 2**8, 2**16, 2**24]
             # Check the header of the TLV message
@@ -342,7 +342,7 @@ currentIndex = 0
 filename = file_create()
 while True:
     try:
-        
+        print(currentIndex)
         # Update the data and check if the data is okay
         dataOk = update(filename)
         
