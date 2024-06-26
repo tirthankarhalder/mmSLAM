@@ -1,11 +1,9 @@
 import serial
 import time
 import numpy as np
-# import pyqtgraph as pg
-# from pyqtgraph.Qt import QtGui
 
 # Change the configuration file name
-configFileName = 'Configurations/1843.cfg'
+configFileName = 'Configurations/xwr18xx_30fps_pcd.cfg'
 
 CLIport = {}
 Dataport = {}
@@ -24,8 +22,8 @@ def serialConfig(configFileName):
     # Open the serial ports for the configuration and the data ports
     
     # Raspberry pi
-    CLIport = serial.Serial('/dev/ttyACM2', 115200)
-    Dataport = serial.Serial('/dev/ttyACM3', 921600)
+    CLIport = serial.Serial('/dev/ttyACM0', 115200)
+    Dataport = serial.Serial('/dev/ttyACM1', 921600)
     
     # Windows
     # CLIport = serial.Serial('COM8', 115200)
@@ -92,7 +90,33 @@ def parseConfigFile(configFileName):
     configParameters["maxVelocity"] = 3e8 / (4 * startFreq * 1e9 * (idleTime + rampEndTime) * 1e-6 * numTxAnt)
     
     return configParameters
-   
+
+
+def processDetectedpoints(byteVec, vecIdx, numDetectedObjects, configParameters):
+    x = np.zeros(numDetectedObjects,dtype=np.float32)
+    y = np.zeros(numDetectedObjects,dtype=np.float32)
+    z = np.zeros(numDetectedObjects,dtype=np.float32)
+    velocity = np.zeros(numDetectedObjects,dtype=np.float32)
+
+    
+    for objectNum in range(numDetectedObjects):
+        startidX = vecIdx+objectNum*16      # size of object is 16
+        x[objectNum] = byteVec[startidX:startidX + 4].view(dtype=np.float32)
+        startidX += 4
+        y[objectNum] = byteVec[startidX:startidX + 4].view(dtype=np.float32)
+        startidX += 4
+        z[objectNum] = byteVec[startidX:startidX + 4].view(dtype=np.float32)
+        startidX += 4
+        velocity[objectNum] = byteVec[startidX:startidX + 4].view(dtype=np.float32)
+        startidX += 4
+    
+    range_val = np.sqrt(x**2+y**2+z**2)
+    rangeidX = np.floor(range_val/configParameters["rangeIdxToMeters"])
+    doppleridX = np.floor(velocity/configParameters["dopplerResolutionMps"])
+    # # Store the data in the detObj dictionary
+    detObj = {"numObj": numDetectedObjects, "x": x, "y": y, "z": z, "velocity":velocity, "rangeidX": rangeidX, "doppleridx": doppleridX, "range_val": range_val}
+    return detObj
+
 # ------------------------------------------------------------------
 
 # Funtion to read and parse the incoming data
@@ -187,44 +211,25 @@ def readAndParseData18xx(Dataport, configParameters):
         idX += 4
         subFrameNumber = np.matmul(byteBuffer[idX:idX+4],word)
         idX += 4
-
+        print(f"numdetectedobjs {numDetectedObj}, numTLVs: {numTLVs}")
         # Read the TLV messages
         for tlvIdx in range(numTLVs):
-            
+            print(f"idx: {idX}, tlvidx: {tlvIdx}")
             # word array to convert 4 bytes to a 32 bit number
             word = [1, 2**8, 2**16, 2**24]
-
             # Check the header of the TLV message
             tlv_type = np.matmul(byteBuffer[idX:idX+4],word)
             idX += 4
             tlv_length = np.matmul(byteBuffer[idX:idX+4],word)
             idX += 4
 
-            # Read the data depending on the TLV message
             if tlv_type == MMWDEMO_UART_MSG_DETECTED_POINTS:
-
-                # Initialize the arrays
-                x = np.zeros(numDetectedObj,dtype=np.float32)
-                y = np.zeros(numDetectedObj,dtype=np.float32)
-                z = np.zeros(numDetectedObj,dtype=np.float32)
-                velocity = np.zeros(numDetectedObj,dtype=np.float32)
+                pointIdX = idX
+                detObj = processDetectedpoints(byteBuffer, pointIdX, numDetectedObj, configParameters)
+                # print(detObj)
+                dataOK=1
                 
-                for objectNum in range(numDetectedObj):
-                    
-                    # Read the data for each object
-                    x[objectNum] = byteBuffer[idX:idX + 4].view(dtype=np.float32)
-                    idX += 4
-                    y[objectNum] = byteBuffer[idX:idX + 4].view(dtype=np.float32)
-                    idX += 4
-                    z[objectNum] = byteBuffer[idX:idX + 4].view(dtype=np.float32)
-                    idX += 4
-                    velocity[objectNum] = byteBuffer[idX:idX + 4].view(dtype=np.float32)
-                    idX += 4
-                
-                # Store the data in the detObj dictionary
-                detObj = {"numObj": numDetectedObj, "x": x, "y": y, "z": z, "velocity":velocity}
-                dataOK = 1
-                
+            idX+=tlv_length  
  
         # Remove already processed data
         if idX > 0 and byteBufferLength>idX:
@@ -254,14 +259,11 @@ def update():
     # Read and parse the received data
     dataOk, frameNumber, detObj = readAndParseData18xx(Dataport, configParameters)
     
-    if dataOk and len(detObj["x"])>0:
-        #print(detObj)
-        x = -detObj["x"]
-        y = detObj["y"]
-        
-        # s.setData(x,y)
-        # QtGui.QApplication.processEvents()
-    
+    # if dataOk and len(detObj["x"])>0:
+    #     #print(detObj)
+    #     x = -detObj["x"]
+    #     y = detObj["y"]
+            
     return dataOk
 
 
@@ -272,20 +274,6 @@ CLIport, Dataport = serialConfig(configFileName)
 
 # Get the configuration parameters from the configuration file
 configParameters = parseConfigFile(configFileName)
-
-# START QtAPPfor the plot
-# app = QtGui.QApplication([])
-
-# Set the plot 
-# pg.setConfigOption('background','w')
-# win = pg.GraphicsLayoutWidget(title="2D scatter plot")
-# p = win.addPlot()
-# p.setXRange(-0.5,0.5)
-# p.setYRange(0,1.5)
-# p.setLabel('left',text = 'Y position (m)')
-# p.setLabel('bottom', text= 'X position (m)')
-# s = p.plot([],[],pen=None,symbol='o')
-# win.show()
    
 # Main loop 
 detObj = {}  
@@ -308,7 +296,6 @@ while True:
         CLIport.write(('sensorStop\n').encode())
         CLIport.close()
         Dataport.close()
-        # win.close()
         break
         
     
