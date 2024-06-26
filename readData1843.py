@@ -1,6 +1,9 @@
 import serial
 import time
 import numpy as np
+import os
+import csv
+
 
 # Change the configuration file name
 configFileName = 'Configurations/xwr18xx_30fps_pcd.cfg'
@@ -13,6 +16,44 @@ byteBufferLength = 0;
 
 # ------------------------------------------------------------------
 
+header = [
+    "Date",
+    "Time",
+    "numObj",
+    "rangeIdx",
+    "range",
+    "dopplerIdx",
+    "doppler",
+    "peakVal",
+    "x",
+    "y",
+    "z",
+    "rp",
+    "noiserp",
+    "zi",
+    "rangeDoppler",
+    "rangeArray",
+    "dopplerArray",
+    "interFrameProcessingTime",
+    "transmitOutputTime",
+    "interFrameProcessingMargin",
+    "interChirpProcessingMargin",
+    "activeFrameCPULoad",
+    "interFrameCPULoad",
+]
+
+
+#Function to create file with fetch 3d point cloud
+def file_create():
+    # filename = "sample"
+    filename = os.path.abspath("") 
+    filename += time.strftime("\%Y%m%d_%H%M%S")
+    filename += ".csv"
+    with open(filename, "w") as f:
+        csv.DictWriter(f, fieldnames=header).writeheader()
+
+    return filename
+
 # Function to configure the serial ports and send the data from
 # the configuration file to the radar
 def serialConfig(configFileName):
@@ -22,12 +63,12 @@ def serialConfig(configFileName):
     # Open the serial ports for the configuration and the data ports
     
     # Raspberry pi
-    CLIport = serial.Serial('/dev/ttyACM0', 115200)
-    Dataport = serial.Serial('/dev/ttyACM1', 921600)
+    # CLIport = serial.Serial('/dev/ttyACM0', 115200)
+    # Dataport = serial.Serial('/dev/ttyACM1', 921600)
     
     # Windows
-    # CLIport = serial.Serial('COM8', 115200)
-    # Dataport = serial.Serial('COM9', 921600)
+    CLIport = serial.Serial('COM5', 115200)
+    Dataport = serial.Serial('COM6', 921600)
 
     # Read the configuration file and send it to the board
     config = [line.rstrip('\r\n') for line in open(configFileName)]
@@ -113,16 +154,30 @@ def processDetectedpoints(byteVec, vecIdx, numDetectedObjects, configParameters)
     range_val = np.sqrt(x**2+y**2+z**2)
     rangeidX = np.floor(range_val/configParameters["rangeIdxToMeters"])
     doppleridX = np.floor(velocity/configParameters["dopplerResolutionMps"])
+    doppler_Val = doppleridX * configParameters["dopplerResolutionMps"]
+
+
     # # Store the data in the detObj dictionary
-    detObj = {"numObj": numDetectedObjects, "x": x, "y": y, "z": z, "velocity":velocity, "rangeidX": rangeidX, "doppleridx": doppleridX, "range_val": range_val}
+    # detObj = {"numObj": numDetectedObjects, "x": x, "y": y, "z": z, "velocity":velocity, "rangeidX": rangeidX, "doppleridx": doppleridX, "range_val": range_val}
+    # Store the data in the detObj dictionary
+    detObj = {
+        "numObj": numDetectedObjects,
+        "rangeIdx": list(rangeidX),
+        "range": list(range_val),
+        "dopplerIdx": list(doppleridX),
+        "doppler": list(doppler_Val),
+        "x": list(x),
+        "y": list(y),
+        "z": list(z),
+    }
     return detObj
 
 # ------------------------------------------------------------------
 
 # Funtion to read and parse the incoming data
-def readAndParseData18xx(Dataport, configParameters):
+def readAndParseData18xx(Dataport, configParameters,filename):
     global byteBuffer, byteBufferLength
-    
+    finalObj = {"Date": time.strftime("%d/%m/%Y"), "Time": time.strftime("%H%M%S")}
     # Constants
     OBJ_STRUCT_SIZE_BYTES = 12;
     BYTE_VEC_ACC_MAX_SIZE = 2**15;
@@ -227,10 +282,15 @@ def readAndParseData18xx(Dataport, configParameters):
                 pointIdX = idX
                 detObj = processDetectedpoints(byteBuffer, pointIdX, numDetectedObj, configParameters)
                 # print(detObj)
+                finalObj.update(detObj)
                 dataOK=1
                 
             idX+=tlv_length  
- 
+
+        with open(filename, "a") as f:
+            writer = csv.DictWriter(f, header)
+            writer.writerow(finalObj)
+
         # Remove already processed data
         if idX > 0 and byteBufferLength>idX:
             shiftSize = totalPacketLen
@@ -249,7 +309,7 @@ def readAndParseData18xx(Dataport, configParameters):
 # ------------------------------------------------------------------
 
 # Funtion to update the data and display in the plot
-def update():
+def update(filename):
      
     dataOk = 0
     global detObj
@@ -257,7 +317,7 @@ def update():
     y = []
       
     # Read and parse the received data
-    dataOk, frameNumber, detObj = readAndParseData18xx(Dataport, configParameters)
+    dataOk, frameNumber, detObj = readAndParseData18xx(Dataport, configParameters,filename)
     
     # if dataOk and len(detObj["x"])>0:
     #     #print(detObj)
@@ -279,10 +339,12 @@ configParameters = parseConfigFile(configFileName)
 detObj = {}  
 frameData = {}    
 currentIndex = 0
+filename = file_create()
 while True:
     try:
+        
         # Update the data and check if the data is okay
-        dataOk = update()
+        dataOk = update(filename)
         
         if dataOk:
             # Store the current frame into frameData
