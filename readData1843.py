@@ -1,11 +1,11 @@
 import serial
 import time
 import numpy as np
-import pyqtgraph as pg
-from pyqtgraph.Qt import QtGui
+# import pyqtgraph as pg
+# from pyqtgraph.Qt import QtGui
 
 # Change the configuration file name
-configFileName = 'AWR1843config.cfg'
+configFileName = 'Configurations/1843.cfg'
 
 CLIport = {}
 Dataport = {}
@@ -24,12 +24,12 @@ def serialConfig(configFileName):
     # Open the serial ports for the configuration and the data ports
     
     # Raspberry pi
-    #CLIport = serial.Serial('/dev/ttyACM0', 115200)
-    #Dataport = serial.Serial('/dev/ttyACM1', 921600)
+    CLIport = serial.Serial('/dev/ttyACM2', 115200)
+    Dataport = serial.Serial('/dev/ttyACM3', 921600)
     
     # Windows
-    CLIport = serial.Serial('COM8', 115200)
-    Dataport = serial.Serial('COM9', 921600)
+    # CLIport = serial.Serial('COM8', 115200)
+    # Dataport = serial.Serial('COM9', 921600)
 
     # Read the configuration file and send it to the board
     config = [line.rstrip('\r\n') for line in open(configFileName)]
@@ -259,8 +259,8 @@ def update():
         x = -detObj["x"]
         y = detObj["y"]
         
-        s.setData(x,y)
-        QtGui.QApplication.processEvents()
+        # s.setData(x,y)
+        # QtGui.QApplication.processEvents()
     
     return dataOk
 
@@ -274,18 +274,18 @@ CLIport, Dataport = serialConfig(configFileName)
 configParameters = parseConfigFile(configFileName)
 
 # START QtAPPfor the plot
-app = QtGui.QApplication([])
+# app = QtGui.QApplication([])
 
 # Set the plot 
-pg.setConfigOption('background','w')
-win = pg.GraphicsLayoutWidget(title="2D scatter plot")
-p = win.addPlot()
-p.setXRange(-0.5,0.5)
-p.setYRange(0,1.5)
-p.setLabel('left',text = 'Y position (m)')
-p.setLabel('bottom', text= 'X position (m)')
-s = p.plot([],[],pen=None,symbol='o')
-win.show()
+# pg.setConfigOption('background','w')
+# win = pg.GraphicsLayoutWidget(title="2D scatter plot")
+# p = win.addPlot()
+# p.setXRange(-0.5,0.5)
+# p.setYRange(0,1.5)
+# p.setLabel('left',text = 'Y position (m)')
+# p.setLabel('bottom', text= 'X position (m)')
+# s = p.plot([],[],pen=None,symbol='o')
+# win.show()
    
 # Main loop 
 detObj = {}  
@@ -308,7 +308,7 @@ while True:
         CLIport.write(('sensorStop\n').encode())
         CLIport.close()
         Dataport.close()
-        win.close()
+        # win.close()
         break
         
     
