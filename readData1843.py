@@ -46,8 +46,9 @@ header = [
 #Function to create file with fetch 3d point cloud
 def file_create():
     # filename = "sample"
-    filename = os.path.abspath("") 
-    filename += time.strftime("\%Y%m%d_%H%M%S")
+    # filename = os.path.abspath("") 
+    filename = ""
+    filename += time.strftime("%Y%m%d_%H%M%S")
     filename += ".csv"
     with open(filename, "w") as f:
         csv.DictWriter(f, fieldnames=header).writeheader()
@@ -63,12 +64,12 @@ def serialConfig(configFileName):
     # Open the serial ports for the configuration and the data ports
     
     # Raspberry pi
-    # CLIport = serial.Serial('/dev/ttyACM0', 115200)
-    # Dataport = serial.Serial('/dev/ttyACM1', 921600)
+    CLIport = serial.Serial('/dev/ttyACM0', 115200)
+    Dataport = serial.Serial('/dev/ttyACM1', 921600)
     
     # Windows
-    CLIport = serial.Serial('COM5', 115200)
-    Dataport = serial.Serial('COM6', 921600)
+    # CLIport = serial.Serial('COM5', 115200)
+    # Dataport = serial.Serial('COM6', 921600)
 
     # Read the configuration file and send it to the board
     config = [line.rstrip('\r\n') for line in open(configFileName)]
@@ -266,10 +267,10 @@ def readAndParseData18xx(Dataport, configParameters,filename):
         idX += 4
         subFrameNumber = np.matmul(byteBuffer[idX:idX+4],word)
         idX += 4
-        # print(f"numdetectedobjs {numDetectedObj}, numTLVs: {numTLVs}")
+        print(f"numdetectedobjs {numDetectedObj}, numTLVs: {numTLVs}")
         # Read the TLV messages
         for tlvIdx in range(numTLVs):
-            # print(f"idx: {idX}, tlvidx: {tlvIdx}")
+            print(f"idx: {idX}, tlvidx: {tlvIdx}")
             # word array to convert 4 bytes to a 32 bit number
             word = [1, 2**8, 2**16, 2**24]
             # Check the header of the TLV message
