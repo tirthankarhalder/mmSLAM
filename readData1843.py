@@ -3,7 +3,7 @@ import time
 import numpy as np
 import os
 import csv
-
+import matplotlib.pyplot as plt
 
 # Change the configuration file name
 configFileName = 'Configurations/xwr18xx_30fps_pcd.cfg'
@@ -283,6 +283,17 @@ def readAndParseData18xx(Dataport, configParameters,filename):
                 pointIdX = idX
                 detObj = processDetectedpoints(byteBuffer, pointIdX, numDetectedObj, configParameters)
                 # print(detObj)
+                fig = plt.figure(figsize=(12,7))
+                ax = fig.add_subplot(projection='3d')
+                img = ax.scatter(detObj["x"], detObj["y"], detObj["z"], cmap=plt.hot())
+                fig.colorbar(img)
+
+                ax.set_xlabel('X')
+                ax.set_ylabel('Y')
+                ax.set_zlabel('Z')
+                plt.savefig("fig/"+time.strftime("%Y%m%d_%H%M%S")+".png")
+                # plt.show()
+        
                 finalObj.update(detObj)
                 dataOK=1
                 
