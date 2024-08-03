@@ -1,1 +1,1 @@
-filename = path +  "/data.csv"
+draw

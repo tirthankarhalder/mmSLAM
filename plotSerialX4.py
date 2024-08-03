@@ -22,10 +22,12 @@ y=[]
 for _ in range(360):
     x.append(0)
     y.append(0)
+port = "/dev/ttyUSB0" #linux
 
-port =  input("Enter port name which lidar is connected:") #windows
+# port =  input("Enter port name which lidar is connected:") #windows
 Obj = PyLidar3.YdLidarX4(port) #PyLidar3.your_version_of_lidar(port,chunk_size) 
-threading.Thread(target=draw).start()
+# threading.Thread(target=draw).start()
+
 if(Obj.Connect()):
     print(Obj.GetDeviceInfo())
     gen = Obj.StartScanning()
@@ -36,6 +38,15 @@ if(Obj.Connect()):
             if(data[angle]>1000):
                 x[angle] = data[angle] * math.cos(math.radians(angle))
                 y[angle] = data[angle] * math.sin(math.radians(angle))
+
+
+        fig = plt.figure(figsize=(12,7))  
+        plt.ylim(-9000,9000)
+        plt.xlim(-9000,9000)
+        plt.scatter(x,y,c='r',s=4)  
+        plt.savefig("./fig1/"+time.strftime("%Y%m%d_%H%M%S")+".png")
+        # plt.show()
+        plt.close()
     is_plot = False
     Obj.StopScanning()
     Obj.Disconnect()

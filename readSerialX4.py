@@ -4,6 +4,8 @@ import csv
 import numpy as np
 from datetime import datetime 
 from pathlib import Path
+import math
+import matplotlib.pyplot as plt
 #Serial port to which lidar connected, Get it from device manager windows
 #In linux type in terminal -- ls /dev/tty* 
 # port = input("Enter port name which lidar is connected:") #windows
@@ -18,6 +20,13 @@ filepath += time.strftime("%Y%m%d_%H%M%S")
 Path(filepath).mkdir(parents=True,exist_ok=True)
 Path(filepath + '/fig').mkdir(parents=True,exist_ok=True)
 
+
+x=[]
+y=[]
+for _ in range(360):
+    x.append(0)
+    y.append(0)
+
 def file_create(path):
     filename = path +  "/data.csv"  
     with open(filename, "w") as f:
@@ -27,19 +36,29 @@ def file_create(path):
 
 if __name__ == "__main__":
     if(Obj.Connect()):
-        print(Obj.GetDeviceInfo())
+        # print(Obj.GetDeviceInfo())
         gen = Obj.StartScanning()
         t = time.time() # start time 
-        filepath = file_create(filepath)
-        # with open(file_create(),mode='w',newline='') as file:
-        # while (time.time() - t) < 5: #scan for 30 seconds
-                # print(next(gen))
+        path = file_create(filepath)
         while True:
             data = next(gen)
+            for angle in range(0,360):
+                if(data[angle]>1000):
+                    x[angle] = data[angle] * math.cos(math.radians(angle))
+                    y[angle] = data[angle] * math.sin(math.radians(angle))
+
+
+            fig = plt.figure(figsize=(12,7))  
+            plt.ylim(-9000,9000)
+            plt.xlim(-9000,9000)
+            plt.scatter(x,y,c='r',s=2)  
+            plt.savefig(filepath + "/fig/"+time.strftime("%Y%m%d_%H%M%S")+".png")
+            # plt.show()
+            plt.close()
             dict_dumper = {'datetime': datetime.now()}
             dict_dumper.update(data)
             print(dict_dumper)
-            with open(filepath, "a") as f:
+            with open(path, "a") as f:
                 writer = csv.DictWriter(f, header)
                 writer.writerow(dict_dumper)
             time.sleep(0.5)
