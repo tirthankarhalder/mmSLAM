@@ -4,7 +4,8 @@ import numpy as np
 import os
 import csv
 import matplotlib.pyplot as plt
-
+from datetime import datetime
+from pathlib import Path
 # Change the configuration file name
 configFileName = 'Configurations/xwr18xx_30fps_pcd.cfg'
 
@@ -17,8 +18,7 @@ byteBufferLength = 0;
 # ------------------------------------------------------------------
 
 header = [
-    "Date",
-    "Time",
+    "DateTime",
     "numObj",
     "rangeIdx",
     "range",
@@ -42,14 +42,17 @@ header = [
     "interFrameCPULoad",
 ]
 
+filepath = "./dataRadar/"
+filepath += time.strftime("%Y%m%d_%H%M%S")
+Path(filepath).mkdir(parents=True,exist_ok=True)
+Path(filepath + '/fig').mkdir(parents=True,exist_ok=True)
 
 #Function to create file with fetch 3d point cloud
-def file_create():
-    # filename = "sample"
+def file_create(path):
+    
     # filename = os.path.abspath("") 
-    filename = ""
-    filename += time.strftime("%Y%m%d_%H%M%S")
-    filename += ".csv"
+   
+    filename = path +  "/data.csv"
     with open(filename, "w") as f:
         csv.DictWriter(f, fieldnames=header).writeheader()
 
@@ -178,7 +181,7 @@ def processDetectedpoints(byteVec, vecIdx, numDetectedObjects, configParameters)
 # Funtion to read and parse the incoming data
 def readAndParseData18xx(Dataport, configParameters,filename):
     global byteBuffer, byteBufferLength
-    finalObj = {"Date": time.strftime("%d/%m/%Y"), "Time": time.strftime("%H%M%S")}
+    finalObj = {"DateTime": datetime.now()}
     # Constants
     OBJ_STRUCT_SIZE_BYTES = 12;
     BYTE_VEC_ACC_MAX_SIZE = 2**15;
@@ -287,13 +290,12 @@ def readAndParseData18xx(Dataport, configParameters,filename):
                 ax = fig.add_subplot(projection='3d')
                 img = ax.scatter(detObj["x"], detObj["y"], detObj["z"], cmap=plt.hot())
                 fig.colorbar(img)
-
                 ax.set_xlabel('X')
                 ax.set_ylabel('Y')
                 ax.set_zlabel('Z')
-                plt.savefig("fig/"+time.strftime("%Y%m%d_%H%M%S")+".png")
+                plt.savefig(filepath + "/fig/"+time.strftime("%Y%m%d_%H%M%S")+".png")
                 # plt.show()
-        
+                plt.close()
                 finalObj.update(detObj)
                 dataOK=1
                 
@@ -351,7 +353,7 @@ configParameters = parseConfigFile(configFileName)
 detObj = {}  
 frameData = {}    
 currentIndex = 0
-filename = file_create()
+filename = file_create(filepath)
 while True:
     try:
         print(currentIndex)
