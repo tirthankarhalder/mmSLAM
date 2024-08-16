@@ -14,8 +14,8 @@ async def print_status_text():
             print(f"-- Connected to drone!")
             break
 
-    async for ned in drone.telemetry.positionbody():
-        print("NED:", ned)
+    # async for ned in drone.telemetry.positionbody():
+    #     print("NED:", ned)
 
 
     async for odom in drone.telemetry.odometry():

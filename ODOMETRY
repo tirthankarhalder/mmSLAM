@@ -1,0 +1,19 @@
+Odometry: Odometry: [time_usec: 2859347831, frame_id: BODY_NED, child_frame_id: BODY_NED, 
+
+
+position_body: PositionBody: [x_m: -8.387996786041185e-05, y_m: 3.0459983463515528e-05, z_m: -2.67270827293396], 
+
+
+q: Quaternion: [w: 0.8515310883522034, x: 0.004781973082572222, y: 0.0024793394841253757, z: 0.5242764949798584, timestamp_us: 0], 
+
+
+velocity_body: VelocityBody: [x_m_s: 0.00019630770839285105, y_m_s: -0.00013350459630601108, z_m_s: -0.0006617258186452091], 
+
+
+angular_velocity_body: AngularVelocityBody: [roll_rad_s: 0.00036822143010795116, pitch_rad_s: -4.582068504532799e-05, yaw_rad_s: 0.0004192633496131748], 
+
+
+pose_covariance: Covariance: [covariance_matrix: [0.0001133308614953421, nan, nan, nan, nan, nan, 0.00011333144357195124, nan, nan, nan, nan, 0.07987459748983383, nan, nan, nan, 5.20224311912898e-05, nan, nan, 5.20516223332379e-05, nan, 0.0004369438102003187]], 
+
+
+velocity_covariance: Covariance: [covariance_matrix: [0.0009098825976252556, nan, nan, nan, nan, nan, 0.0009098916198126972, nan, nan, nan, nan, 0.004717755131423473, nan, nan, nan, nan, nan, nan, nan, nan, nan]]]
