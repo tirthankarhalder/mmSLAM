@@ -1,4 +1,4 @@
-
+<!-- 
 ## Description 
 
 | Filename                     | Description                                                      | Expected Arguments                                               |
@@ -28,4 +28,4 @@
 | socket_receiver.c            | C source code for receiving data over sockets.                   | Compilation and execution in a C environment.                    |
 | test_helper.py               | Tests helper functions or modules.                               | Test cases and assertions.                                       |
 | vicon_estimate.py            | Estimates parameters using Vicon motion capture data.            | Vicon motion capture data files or inputs.                       |
-| visualize_heatmaps.py        | Visualizes heatmaps from sensor or simulation data.              | Data for generating and animating heatmaps.                      |
+| visualize_heatmaps.py        | Visualizes heatmaps from sensor or simulation data.              | Data for generating and animating heatmaps.                      | -->
