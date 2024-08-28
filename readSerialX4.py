@@ -14,8 +14,8 @@ Obj = PyLidar3.YdLidarX4(port) #PyLidar3.your_version_of_lidar(port,chunk_size)
 header = list(np.arange(0,360,1))
 header = ['datetime',*header]
 
-
-filepath = "./dataX4/"
+generate_images = 0
+filepath = "./datasets/"
 filepath += time.strftime("%Y%m%d_%H%M%S")
 Path(filepath).mkdir(parents=True,exist_ok=True)
 Path(filepath + '/fig').mkdir(parents=True,exist_ok=True)
@@ -47,14 +47,14 @@ if __name__ == "__main__":
                     x[angle] = data[angle] * math.cos(math.radians(angle))
                     y[angle] = data[angle] * math.sin(math.radians(angle))
 
-
-            fig = plt.figure(figsize=(12,7))  
-            plt.ylim(-9000,9000)
-            plt.xlim(-9000,9000)
-            plt.scatter(x,y,c='r',s=2)  
-            plt.savefig(filepath + "/fig/"+time.strftime("%Y%m%d_%H%M%S")+".png")
-            # plt.show()
-            plt.close()
+            if generate_images:
+                fig = plt.figure(figsize=(12,7))  
+                plt.ylim(-9000,9000)
+                plt.xlim(-9000,9000)
+                plt.scatter(x,y,c='r',s=2)  
+                plt.savefig(filepath + "/fig/"+time.strftime("%Y%m%d_%H%M%S")+".png")
+                # plt.show()
+                plt.close()
             dict_dumper = {'datetime': datetime.now()}
             dict_dumper.update(data)
             print(dict_dumper)
