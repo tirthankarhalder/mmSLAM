@@ -13,7 +13,7 @@ header = [
     "z"
     
 ]
-filename = "data.csv"  
+filename = "depth.csv"  
 with open(filename, "w") as f:
     csv.DictWriter(f, fieldnames=header).writeheader()
 # Configure depth and color streams
@@ -67,7 +67,7 @@ try:
         }
         
         dict_dumper.update(data)
-        path = "./data.csv"
+        path = "./depth.csv"
         with open(path, "a") as f:
             writer = csv.DictWriter(f, header)
             writer.writerow(dict_dumper)
@@ -86,15 +86,15 @@ try:
         # print("Saved point cloud to 'point_cloud.ply'")
 
         # Display the color image
-        cv2.imshow('RealSense', color_image)
+        # cv2.imshow('RealSense', color_image)
 
-        # Exit on 'q' key press
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        # # Exit on 'q' key press
+        # if cv2.waitKey(1) & 0xFF == ord('q'):
+        #     break
 
 finally:
     # Stop streaming
     pipeline.stop()
 
     # Close OpenCV windows
-    cv2.destroyAllWindows()
+    # cv2.destroyAllWindows()
