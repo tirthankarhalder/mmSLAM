@@ -1,0 +1,332 @@
+    1  lscpu
+    2  cd mmPhase/
+    3  ls
+    4  cd ../
+    5  git clone https://github.com/chomchom69420/mmSnS.git
+    6  cd mm
+    7  cd mmSnS/
+    8  ls
+    9  cd utils/
+   10  cd ../../mmPhase/
+   11  ls
+   12  gedit data_collect.c 
+   13  gcc data_collect.c -o data_collect_mmwave_only -lpthread
+   14  gcc -o data_collect_mmwave_only data_collect.c socket_receiver.c -Iinclude -lpthread 
+   15  ls data_collect_mmwave_only
+   16  cd ../mmSns
+   17  cd ../mmSnS/
+   18  ls
+   19  gedit command.py 
+   20  diff command.py ../mmPhase/command_stick.py 
+   21  diff command.py ../mmPhase/command.py 
+   22  cp command.py command_stick.py
+   23  gedit command_stick.py 
+   24  python command_stick.py 
+   25  cd ../
+   26  cd mmPhase/
+   27  python command_stick.py 
+   28  python
+   29  python3
+   30  python3 command_stick.py 
+   31  pip3 install pyserial 
+   32  sudo apt-get python3-pip
+   33  sudo apt-get update 
+   34  sudo apt-get install python3-pip
+   35  python3 command_stick.py 
+   36  pip3 install pyserial 
+   37  python3 command_stick.py 
+   38  pip list 
+   39  pip show 
+   40  python -m 
+   41  python -m pip show 
+   42  python -m show 
+   43  pip3 install Jetson.GPIO
+   44  python3 command_stick.py 
+   45  pip3 install --break-system-packages adafruit-blinka
+   46  pip3 install adafruit-blinka
+   47  python3 command_stick.py 
+   48  sudo pip3 install adafruit-blinka
+   49  sudo apt-get install -y build-essential libssl-dev zlib1g-dev libbz2-dev                         libreadline-dev libsqlite3-dev wget curl llvm                         libncurses5-dev libncursesw5-dev xz-utils tk-dev                         libffi-dev liblzma-dev python3-openssl git
+   50  mkdir ~/python38
+   51  cd ~/python38
+   52  wget https://www.python.org/ftp/python/3.8.16/Python-3.8.16.tgz
+   53  ip addr
+   54  mv ~/Downloads/Python-3.8.16.tgz .
+   55  tar -xf Python-3.8.16.tgz
+   56  ls
+   57  tar -xf Python-3.8.16.tgz
+   58  cd Python-3.8.16
+   59  ./configure --enable-optimizations
+   60  make -j4
+   61  sudo make install
+   62  python3
+   63  python3 -m pip install adafruit-blinka
+   64  cd mmPhase/
+   65  clear
+   66  python3 command
+   67  python3 command.py 
+   68  python3 command_stick.py 
+   69  python3 -m pip install opencv-python
+   70  python3 command_stick.py 
+   71  cd
+   72  git clone -b python https://github.com/dusty-nv/jetson-inference
+   73  git clone -b python3 https://github.com/dusty-nv/jetson-inference
+   74  clear
+   75  cd -
+   76  python3 command_stick.py 
+   77  python3 -m pip install Jetson.GPIO
+   78  python3 command_stick.py 
+   79  sudo python3 command_stick.py 
+   80  python3 -m pip install adafruit-circuitpython-mpu6050
+   81  python3 command_stick.py 
+   82  sudo python3 command_stick.py 
+   83  gedit command_stick.py 
+   84  sudo python3 command_stick.py 
+   85  sudo python3 command_stick.py -nf 100 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d hi  
+   86  sudo python3 command_stick.py -nf 100 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d hi -imu
+   87  sudo python3 command_stick.py -nf 100 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d hi 
+   88  clear
+   89  git status 
+   90  gedit .gitignore 
+   91  git status 
+   92  ls utils/
+   93  clear
+   94  git status 
+   95  git add .gitignore 
+   96  git add command_stick.py 
+   97  git add data_collect.c 
+   98  git add socket_receiver.h 
+   99  git add utils/imu_data_collector.py 
+  100  git add utils/video_cap.py 
+  101  git status 
+  102  git commit -m "for nano stick"
+  103  git config --global user.email "arghasen10@gmail.com"
+  104  git config --global user.name "arghasen10"
+  105  git status 
+  106  git commit -m "for nano stick"
+  107  git status 
+  108  git push origin main 
+  109  clear
+  110  ssh argha@10.5.20.122
+  111  git 
+  112  git clone https://github.com/arghasen10/mmPhase.git
+  113  ls
+  114  cd mmPhase/
+  115  ls
+  116  gedit command.py 
+  117  cp command.py command_stick.py
+  118  gedit command_stick.py 
+  119  ls
+  120  ifconfig
+  121  pwd
+  122  sudo make install
+  123  pwd
+  124  ifconfig 
+  125  sudo shutdown now
+  126  ip addr
+  127  cd mmPhase/
+  128  history | grep python3
+  129  sudo python3 command_stick.py -nf 100 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d hi
+  130  gedit command_stick.py 
+  131  sudo python3 command_stick.py -nf 100 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d hi
+  132  ls
+  133  ip addr
+  134  sudo python3 command_stick.py -nf 100 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d hi
+  135  gedit command_stick.py 
+  136  ip addr
+  137  sudo python3 command_stick.py -nf 100 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d hi
+  138  /home/stick/mmPhase/data_collect_mmwave_only test1 100
+  139  git status 
+  140  git diff command_stick.py
+  141  gedit command_stick.py 
+  142  git status 
+  143  git diff command_stick.py
+  144  clear
+  145  git add .
+  146  git commit -m "mac no change"
+  147  git push origin main 
+  148  ip addr
+  149  cd mmPhase/
+  150  git status 
+  151  git push origin main 
+  152  ping www.google.com
+  153  ip addr
+  154  sudo systemctl restart networking.service 
+  155  ip addr
+  156  clear
+  157  sudo reboot now
+  158  ssh argha@10.5.20.122
+  159  ip addr
+  160  cd mmPhase/
+  161  clear
+  162  git push origin main 
+  163  sudo macchanger -mac e8:b5:d0:fe:9c:67
+  164  sudo macchanger -mac e8:b5:d0:fe:9c:67 eth0
+  165  ip addr
+  166  sudo macchanger -mac=e8:b5:d0:fe:9c:67 eth0
+  167  sudo macchanger -mac e8:b5:d0:fe:9c:67 eth0
+  168  sudo macchanger --mac=e8:b5:d0:fe:9c:67 eth0
+  169  history | grep python3
+  170  sudo python3 command_stick.py -nf 100 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d hi
+  171  cd mmPhase/
+  172  sudo python3 command_stick.py -nf 100 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d hi
+  173  ls
+  174  ls *.bin
+  175  ls -lth *.bin
+  176  sudo shutdown now
+  177  sudo apt-get install macchanger 
+  178  cd mmPhase/
+  179  gedit socket_receiver.c 
+  180  gedit data_collect
+  181  gedit data_collect.c
+  182  gedit command_stick.py 
+  183  cd mmSnS/utils/
+  184  ls
+  185  ping stick-desktop.local
+  186  ssh stick@localhost
+  187  sudo apt-get install avahi-daemon avahi-discover avahi-utils libnss-mdns mdns-scan
+  188  sudo systemctl restart avahi-daemon
+  189  sudo systemctl restart ssh 
+  190  ssh stick@localhost
+  191  apt-get install openssh-server openssh-client
+  192  sudo apt-get install openssh-server openssh-client
+  193  ssh user@localhost
+  194  sudo rm /etc/ssh/ssh_host_* && sudo dpkg-reconfigure openssh-server
+  195  ssh user@localhost
+  196  ssh stick@localhost
+  197  ls
+  198  history
+  199  sudo python3 command_stick.py -nf 100 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d Test1 -imu
+  200  gedit command_stick.py 
+  201  exit
+  202  cd mmPhase/
+  203  gedit command_stick.py 
+  204  cd mmPhase/
+  205  vi command_stick.py 
+  206  sudo python3 command_stick.py -nf 100 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d Test1 -imu
+  207  exir
+  208  exit
+  209  python
+  210  python3
+  211  cd /media/stick/Seagate\ Backup\ Plus\ Drive/
+  212  ls
+  213  cd ..
+  214  sudo ls -lth Seagate\ Backup\ Plus\ Drive/
+  215  sudo systemctl restart networking.service 
+  216  cd mmPhase/
+  217  history | grep python
+  218  sudo python3 command_stick.py -nf 100 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d Test1 -imu
+  219  ls
+  220  gedit command_stick.py 
+  221  sudo python3 command_stick.py -nf 100 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d Test1 -imu
+  222  gedit command_stick.py 
+  223  sudo python3 command_stick.py -nf 10 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d Test1 -imu
+  224  gedit command_stick.py 
+  225  sudo python3 command_stick.py -nf 10 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d Test1 -imu
+  226  ls *.bin
+  227  ls imu_data/
+  228  ls *.csv
+  229  nand dataset_stick.csv 
+  230  gedit dataset_stick.csv 
+  231  ls /media/stick/Seagate\ Backup\ Plus\ Drive/
+  232  ls /media/stick/
+  233  ls -lth  /media/stick/
+  234  ls /media/stick/Seagate\ Backup\ Plus\ Drive/
+  235  clear
+  236  cd mmPhase/
+  237  clear
+  238  history 
+  239  sudo python3 command_stick.py -nf 25 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d vicon_stick_single_obj_high_speed_25_trail4 -imu
+  240  sudo python3 command_stick.py -nf 25 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d test4 -imu
+  241  vi command_stick.py 
+  242  sudo python3 command_stick.py -nf 25 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d test4 -imu
+  243  ./data_collect_mmwave_only stick_2024-08-13_20_27_46_test4_imu.bin 25
+  244  sudo python3 command_stick.py -nf 25 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d vicon_stick_single_obj_high_speed_25_trail4 -imu
+  245  ls *.bin
+  246  ls -lth *.bin
+  247  sudo python3 command_stick.py -nf 25 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d vicon_stick_two_obj_low_speed_250_trail5 -imu
+  248  sudo python3 command_stick.py -nf 25 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d vicon_stick_two_obj_low_speed_500_trail6 -imu
+  249  sudo python3 command_stick.py -nf 25 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d vicon_stick_two_obj_high_speed_25_trail7 -imu
+  250  sudo python3 command_stick.py -nf 25 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d vicon_stick_two_obj_mid_speed_50_trail8 -imu
+  251  sudo shutdown now
+  252  cd mmPhase/
+  253  gedit command_stick.py 
+  254  clear
+  255  history | grep python
+  256  sudo python3 command_stick.py -nf 25 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d drone_test1 -imu
+  257  gedit command_stick.py 
+  258  sudo python3 command_stick.py -nf 25 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d drone_test1 -imu
+  259  ip addr
+  260  sudo python3 command_stick.py -nf 25 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d drone_test1 -imu
+  261  ls *.bin
+  262  clear
+  263  ls imu_data/
+  264  clear
+  265  ifconfig
+  266  nano /etc/network/interfaces
+  267  nano /etc/network/interfaces\
+  268  vim /etc/network/interfaces\
+  269  sudo apt-get install nano
+  270  vim /etc/network/interfaces
+  271  nano /etc/network/interfaces
+  272  sudo nano /etc/network/interfaces
+  273  ifconfig
+  274  sudo reboot
+  275  ifconfig -a
+  276  ifconfig
+  277  sudo nano /etc/network/interfaces
+  278  sudo reboot
+  279  ifconfig -a 
+  280  sudo nano /etc/network/interfaces
+  281  sudo reboot 
+  282  clear
+  283  ls
+  284  exit
+  285  cd mmPhase/
+  286  git status 
+  287  git pull origin main 
+  288  history 
+  289  gedit command_stick.py 
+  290  sudo python3 command_stick.py -nf 25 -nc 182 -tc ^C -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d test_new -imu
+  291  history 
+  292  sudo python3 command_stick.py -nf 25 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d trial -imu
+  293  clear
+  294  gedit command_stick.py 
+  295  python
+  296  python3 imu_data_collector.py 
+  297  sudo python3 imu_data_collector.py 
+  298  sudo cat imu_data/test1 
+  299  sudo reboot now
+  300  clear
+  301  cd mmPhase/
+  302  clear
+  303  history | grep python3
+  304  clear
+  305  ls *.bin
+  306  sudo rm stick_2024-08-24_21_37_05_trial_new1_.bin 
+  307  sudo python3 command_stick.py -nf 25 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d trial_new1 -imu
+  308  clear
+  309  ls *.bin
+  310  sudo rm stick_2024-08-24_22_42_49_trial_new1_.bin 
+  311  sudo python3 command_stick.py -nf 100 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d traj_cse1_100 -imu
+  312  sudo python3 command_stick.py -nf 100 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d traj_cse2_100 -imu
+  313  sudo python3 command_stick.py -nf 50 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d traj_cse3_50 -imu
+  314  sudo python3 command_stick.py -nf 50 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d traj_cse4_50 -imu
+  315  sudo python3 command_stick.py -nf 100 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d traj_cse5_100 -imu
+  316  sudo python3 command_stick.py -nf 100 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d traj_cse6_100 -imu
+  317  sudo python3 command_stick.py -nf 100 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d traj_cse7_100 -imu
+  318  sudo python3 command_stick.py -nf 75 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d traj_cse8_75 -imu
+  319  ls mmPhase/
+  320  ls
+  321  clear
+  322  cd mmPhase/
+  323  ls
+  324  ls stick_2024-08-24_2*_traj_cse*
+  325  mkdir new_data_cse
+  326  mv stick_2024-08-24_2*_traj_cse* new_data_cse/
+  327  clear
+  328  cd new_data_cse/
+  329  ls
+  330  cd ..
+  331  scp -r new_data_cse argha@10.5.30.24:/home/argha
+  332  clear
