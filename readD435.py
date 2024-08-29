@@ -1,6 +1,6 @@
 import pyrealsense2 as rs
 import numpy as np
-import open3d as o3d
+#import open3d as o3d
 import cv2
 #csv writer
 import csv
