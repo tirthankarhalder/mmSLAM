@@ -15,7 +15,7 @@ header = [
         
     ]
 
-def collect_depth_data(filename):
+def collect_depth_data(duration,filename):
     # Construct the full path with the desired directory
     directory_path = os.path.join('./', 'depth')
     full_path = os.path.join(directory_path, filename)
@@ -50,7 +50,9 @@ def collect_depth_data(filename):
     align = rs.align(align_to)
 
     try:
-        while True:
+	
+        end_time = time.time() + duration
+        while(time.time() < end_time):
             # Wait for a coherent pair of frames: depth and color
             frames = pipeline.wait_for_frames()
             

@@ -17,7 +17,7 @@ y=[]
 for _ in range(360):
     x.append(0)
     y.append(0)
-def collect_lidar_data(filename):
+def collect_lidar_data(duration, filename):
     # Construct the full path with the desired directory
     directory_path = os.path.join('./', 'lidar')
     full_path = os.path.join(directory_path, filename)
@@ -40,7 +40,8 @@ def collect_lidar_data(filename):
             gen = Obj.StartScanning()
             t = time.time() # start time 
             # path = file_create(filepath)
-            while True:
+            end_time = time.time() + duration
+       	    while(time.time() < end_time):
                 data = next(gen)
                 for angle in range(0,360):
                     if(data[angle]>1000):
@@ -48,7 +49,7 @@ def collect_lidar_data(filename):
                         y[angle] = data[angle] * math.sin(math.radians(angle))
                 dict_dumper = {'datetime': datetime.now()}
                 dict_dumper.update(data)
-                print(dict_dumper)
+                #print(dict_dumper)
                 with open(filename, "a") as f:
                     writer = csv.DictWriter(f, header)
                     writer.writerow(dict_dumper)
