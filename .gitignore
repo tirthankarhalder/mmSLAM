@@ -21,6 +21,8 @@ estimated_speed_doppler.json
 data_collect_mmwave_only
 .ipynb_checkpoints/
 imu_data/
+depth_data/
+lidar_data
 animations/
 *.gif
 **/*.ipynb
