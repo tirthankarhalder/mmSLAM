@@ -113,8 +113,9 @@ if __name__ == "__main__":
             imu_duration = (int(n_frames)+5)*int(periodicity) / 1000; #periodicity is in ms (collect for 5 extra frames)
             imu_filename = "drone_"+date_string+"_imu.bin"
             imu_thread = threading.Thread(target=collect_data, args=(imu_duration, imu_filename))
-	    print("Starting IMU thread")
-            imu_thread.start() 
+            print("Starting IMU thread")
+            imu_thread.start()
+	         
 
         execute_c_program(c_program_path,c_program_args)
 
@@ -126,7 +127,7 @@ if __name__ == "__main__":
             depth_duration = (int(n_frames)+5)*int(periodicity) / 1000; #periodicity is in ms (collect for 5 extra frames)
             depth_filename = "drone_"+date_string+"_depth.csv"
             depth_thread = threading.Thread(target=collect_depth_data, args=(depth_duration,depth_filename))
-	    print("Startin Depth Camera thread")
+            print("Starting Depth Camera thread")
             depth_thread.start()  
 
         if(args.depth):
@@ -136,7 +137,7 @@ if __name__ == "__main__":
             lidar_duration = (int(n_frames)+5)*int(periodicity) / 1000; #periodicity is in ms (collect for 5 extra frames)
             lidar_filename = "drone_"+date_string+"_lidar.csv"
             lidar_thread = threading.Thread(target=collect_lidar_data, args=(lidar_duration,lidar_filename))
-	    print("Startin the lidar thread")
+            print("Starting the lidar thread")	        
             lidar_thread.start() 
             time.sleep(3)
 

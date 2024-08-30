@@ -36,26 +36,26 @@ def collect_lidar_data(duration, filename):
     with open(full_path, "w") as f:
         csv.DictWriter(f, fieldnames=header).writeheader()
     if(Obj.Connect()):
-            # print(Obj.GetDeviceInfo())
-            gen = Obj.StartScanning()
-            t = time.time() # start time 
-            # path = file_create(filepath)
-            end_time = time.time() + duration
-       	    while(time.time() < end_time):
-                data = next(gen)
-                for angle in range(0,360):
-                    if(data[angle]>1000):
-                        x[angle] = data[angle] * math.cos(math.radians(angle))
-                        y[angle] = data[angle] * math.sin(math.radians(angle))
-                dict_dumper = {'datetime': datetime.now()}
-                dict_dumper.update(data)
-                #print(dict_dumper)
-                with open(filename, "a") as f:
-                    writer = csv.DictWriter(f, header)
-                    writer.writerow(dict_dumper)
-                time.sleep(0.5)
-            Obj.StopScanning()
-            Obj.Disconnect()
+        # print(Obj.GetDeviceInfo())
+        gen = Obj.StartScanning()
+        t = time.time() # start time 
+        # path = file_create(filepath)
+        end_time = time.time() + duration
+        while(time.time() < end_time):
+            data = next(gen)
+            for angle in range(0,360):
+                if(data[angle]>1000):
+                    x[angle] = data[angle] * math.cos(math.radians(angle))
+                    y[angle] = data[angle] * math.sin(math.radians(angle))
+            dict_dumper = {'datetime': datetime.now()}
+            dict_dumper.update(data)
+            #print(dict_dumper)
+            with open(filename, "a") as f:
+                writer = csv.DictWriter(f, header)
+                writer.writerow(dict_dumper)
+            time.sleep(0.5)
+        Obj.StopScanning()
+        Obj.Disconnect()
     else:
         print("Error connecting to device")
 
