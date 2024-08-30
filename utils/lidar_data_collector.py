@@ -25,7 +25,7 @@ def collect_lidar_data(duration, filename):
     # Ensure the directory exists
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
-        print("depth_data directory is created")
+        print("lidar_data directory is created")
     
     # Check if the file exists, delete it if it does
     if os.path.exists(full_path):
