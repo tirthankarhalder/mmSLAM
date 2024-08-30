@@ -17,7 +17,7 @@ y=[]
 for _ in range(360):
     x.append(0)
     y.append(0)
-def collect_lidar_data(duration, filename):
+def collect_lidar_data(filename):
     # Construct the full path with the desired directory
     directory_path = os.path.join('./', 'lidar')
     full_path = os.path.join(directory_path, filename)

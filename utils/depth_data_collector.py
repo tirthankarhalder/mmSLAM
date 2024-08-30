@@ -15,7 +15,7 @@ header = [
         
     ]
 
-def collect_depth_data(duration, filename):
+def collect_depth_data(filename):
     # Construct the full path with the desired directory
     directory_path = os.path.join('./', 'depth')
     full_path = os.path.join(directory_path, filename)
