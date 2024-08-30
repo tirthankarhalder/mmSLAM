@@ -158,7 +158,7 @@ if __name__ == "__main__":
     ans1=input("Have you connected the ethernet to Jetson? yes/no: ")
     camera_pass = False
     args = parser.parse_args()
-    mac_command = f"sudo macchanger --mac=e8:b5:d0:fe:9c:67 eth0"
+    mac_command = f"sudo macchanger --mac=08:97:98:70:b9:13 eth0"
     print(mac_command)
     os.system(mac_command)
     if(args.camera):
@@ -211,7 +211,7 @@ if __name__ == "__main__":
         #os.system(f"mv {file_name} /media/stick/Seagate\ Backup\ Plus\ Drive/")
         #if (args.imu):
             #os.system(f"mv ./imu_data/{imu_filename} /media/stick/Seagate\ Backup\ Plus\ Drive/imu_data/")
-        file_path="dataset_stick.csv"
+        file_path=date_string+"_dataset_drone.csv"
         data=[file_name,n_frames,n_chirps,tc,adc_samples,sampling_rate,periodicity,l,r0,descri]
         if r0==l:
             data.append('Straight')
