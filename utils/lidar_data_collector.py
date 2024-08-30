@@ -3,7 +3,6 @@ import os
 import time 
 import struct 
 import csv
-import pyrealsense2 as rs
 import numpy as np
 from datetime import datetime
 import PyLidar3
