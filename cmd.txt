@@ -330,3 +330,11 @@
   330  cd ..
   331  scp -r new_data_cse argha@10.5.30.24:/home/argha
   332  clear
+
+
+
+
+
+
+sudo python3 command_drone.py -nf 100 -nc 182 -tc 72 -s 256 -r 4400 -tf 200 -l -1 -r0 -1 -d test -imu -depth -lidar
+
