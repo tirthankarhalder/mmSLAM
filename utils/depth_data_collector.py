@@ -86,8 +86,8 @@ def collect_depth_data(duration,filename):
             }
             
             dict_dumper.update(data)
-            path = "./depth.csv"
-            with open(path, "a") as f:
+            # path = "./depth.csv"
+            with open(full_path, "a") as f:
                 writer = csv.DictWriter(f, header)
                 writer.writerow(dict_dumper)
 
@@ -118,33 +118,3 @@ def collect_depth_data(duration,filename):
         # Stop streaming
         pipeline.stop()
         time.sleep(0.02)
-
-        # Close OpenCV windows
-        # cv2.destroyAllWindows()
-    # Open the file in binary write mode
-    # with open(full_path, 'wb') as file:
-    #     end_time = time.time() + duration
-    #     while(time.time() < end_time):
-    #         # Simulating the collection of IMU data (6 values) and a timestamp
-    #         ax = mpu.acceleration[0]
-    #         ay = mpu.acceleration[1]
-    #         az = mpu.acceleration[2]
-    #         gx = mpu.gyro[0]
-    #         gy = mpu.gyro[1]
-    #         gz = mpu.gyro[2]
-
-    #         imu_data = [ax,ay,az,gx,gy,gz] # Placeholder for actual IMU data collection
-    #         timestamp = time.time()
-    #         data_to_store = struct.pack('d' * 7, timestamp, *imu_data)
-                
-    #         # Write the packed data to the file
-    #         file.write(data_to_store)
-                
-    #         # Schedule the next collection in 0.02 seconds
-    #         #threading.Timer(0.02, collect_and_store).start()
-    #         time.sleep(0.02)
-                
-    #     # Start the first data collection
-    #     #collect_and_store()
-
-

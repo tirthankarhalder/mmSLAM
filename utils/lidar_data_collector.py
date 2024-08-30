@@ -50,7 +50,7 @@ def collect_lidar_data(duration, filename):
             dict_dumper = {'datetime': datetime.now()}
             dict_dumper.update(data)
             #print(dict_dumper)
-            with open(filename, "a") as f:
+            with open(full_path, "a") as f:
                 writer = csv.DictWriter(f, header)
                 writer.writerow(dict_dumper)
             time.sleep(0.5)
