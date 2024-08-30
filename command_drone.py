@@ -9,7 +9,6 @@ import argparse
 import cv2
 import pyrealsense2 as rs
 import numpy as np
-import PyLidar3
 import matplotlib.pyplot as plt
 import math
 
@@ -17,6 +16,8 @@ import math
 # import adafruit_mpu6050
 import threading
 from utils.imu_data_collector import collect_data
+from utils.depth_data_collector import collect_depth_data
+from utils.lidar_data_collector import collect_lidar_data
 from utils.video_cap import capture_video
 #from git import Repo
 #from utils import push
@@ -51,155 +52,10 @@ def capture_frame_and_save(folder_path, image_name):
     else:
         print("Error: Failed to capture frame")
 
-def execute_depth_camera():
-    header = [
-        "datetime",
-        "frame_number",
-        "x",
-        "y",
-        "z"
-        
-    ]
-    filename = "depth.csv"  
-    with open(filename, "w") as f:
-        csv.DictWriter(f, fieldnames=header).writeheader()
-    # Configure depth and color streams
-    pipeline = rs.pipeline()
-    config = rs.config()
-
-    # Enable depth and color streams
-    config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-    config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
-
-    # Start streaming
-    pipeline.start(config)
-
-    # Create an align object
-    # rs.align allows us to perform alignment of depth frames to others frames
-    align_to = rs.stream.color
-    align = rs.align(align_to)
-
-    try:
-        while True:
-            # Wait for a coherent pair of frames: depth and color
-            frames = pipeline.wait_for_frames()
-            
-            # Align the depth frame to color frame
-            aligned_frames = align.process(frames)
-            
-            # Get aligned frames
-            depth_frame = aligned_frames.get_depth_frame()
-            color_frame = aligned_frames.get_color_frame()
-
-            if not depth_frame or not color_frame:
-                continue
-
-            # Convert images to numpy arrays
-            depth_image = np.asanyarray(depth_frame.get_data())
-            color_image = np.asanyarray(color_frame.get_data())
-
-            # Create point cloud object
-            pc = rs.pointcloud()
-            points = pc.calculate(depth_frame)
-            pc.map_to(color_frame)
-            # print(points.get_vertices())
-
-            dict_dumper = {'datetime': datetime.now()}
-            data = {
-                "datetime" : datetime.now(),
-                "frame_number": points.get_frame_number(),
-                "x":np.asanyarray(points.get_vertices())['f0'],
-                "y":np.asanyarray(points.get_vertices())['f1'],
-                "z":np.asanyarray(points.get_vertices())['f2']
-            }
-            
-            dict_dumper.update(data)
-            path = "./depth.csv"
-            with open(path, "a") as f:
-                writer = csv.DictWriter(f, header)
-                writer.writerow(dict_dumper)
-            # print("Frame #:",points.get_frame_number())
-            # print("Frame size:", points.get_data_size())
-            # print("Frame profile:", points.profile)
-            # # depth = np.asanyarray(points.get_data())
-            # depth = np.asanyarray(points.as_points().get_data()) 
-    
-            # print("Depth shape", depth.shape)
-            # print("Depth", depth)  
-
-
-            # Save point cloud data as a .ply file
-            # points.export_to_ply("point_cloud.ply", color_frame)
-            # print("Saved point cloud to 'point_cloud.ply'")
-
-            # Display the color image
-            # cv2.imshow('RealSense', color_image)
-
-            # # Exit on 'q' key press
-            # if cv2.waitKey(1) & 0xFF == ord('q'):
-            #     break
-
-    finally:
-        # Stop streaming
-        pipeline.stop()
-
-        # Close OpenCV windows
-        # cv2.destroyAllWindows()
-
-
-
-# generate_images = 0
-# filepath = "./datasets/"
-# filepath += time.strftime("%Y%m%d_%H%M%S")
-# Path(filepath).mkdir(parents=True,exist_ok=True)
-# Path(filepath + '/fig').mkdir(parents=True,exist_ok=True)
-
-
-
-
-# def file_create(path):
-#     generate_images = 0
-
-#     filename = "lidardata.csv"  
-#     with open(filename, "w") as f:
-#         csv.DictWriter(f, fieldnames=header).writeheader()
-#     return filename
 
 def execute_lidar():
-    port = "/dev/ttyUSB0" #linux
-    Obj = PyLidar3.YdLidarX4(port) #PyLidar3.your_version_of_lidar(port,chunk_size) 
-    header = list(np.arange(0,360,1))
-    header = ['datetime',*header]
-    x=[]
-    y=[]
-    for _ in range(360):
-        x.append(0)
-    y.append(0)
-    filename = "lidardata.csv"  
-    with open(filename, "w") as f:
-        csv.DictWriter(f, fieldnames=header).writeheader()
-    if(Obj.Connect()):
-            # print(Obj.GetDeviceInfo())
-            gen = Obj.StartScanning()
-            t = time.time() # start time 
-            # path = file_create(filepath)
-            while True:
-                data = next(gen)
-                for angle in range(0,360):
-                    if(data[angle]>1000):
-                        x[angle] = data[angle] * math.cos(math.radians(angle))
-                        y[angle] = data[angle] * math.sin(math.radians(angle))
-                dict_dumper = {'datetime': datetime.now()}
-                dict_dumper.update(data)
-                print(dict_dumper)
-                with open(filename, "a") as f:
-                    writer = csv.DictWriter(f, header)
-                    writer.writerow(dict_dumper)
-                time.sleep(0.5)
-            Obj.StopScanning()
-            Obj.Disconnect()
-    else:
-        print("Error connecting to device")
+   
+    pass
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='parser for params')
@@ -255,25 +111,51 @@ if __name__ == "__main__":
             imu_duration = (int(n_frames)+5)*int(periodicity) / 1000; #periodicity is in ms (collect for 5 extra frames)
             imu_filename = "drone_"+date_string+"_imu.bin"
             imu_thread = threading.Thread(target=collect_data, args=(imu_duration, imu_filename))
-            imu_thread.start()     
+            imu_thread.start() 
+
         execute_c_program(c_program_path,c_program_args)
+
         if(args.imu):
             imu_thread.join()    
             # video_thread.join()
+
         if(args.depth):
-            execute_depth_camera()
+            depth_filename = "drone_"+date_string+"_depth.csv"
+            depth_thread = threading.Thread(target=collect_depth_data, args=(depth_filename))
+            depth_thread.start()  
+
+        if(args.depth):
+            depth_thread.join()
+        
+        if(args.depth):
+            lidar_filename = "drone_"+date_string+"_lidar.csv"
+            lidar_thread = threading.Thread(target=collect_lidar_data, args=(depth_filename))
+            lidar_thread.start() 
+            time.sleep(3)
+
         if(args.lidar):
-            execute_lidar()
+            lidar_thread.join()
+
         ans_to_keep=input('Do you want to keep the reading? yes/no : ')
         if(ans_to_keep=='no'):
             os.system(f"rm {file_name}")
             print(f"{file_name} deleted successfully")
+
             os.system(f"rm ./imu_data/{imu_filename}")
             print(f"./imu_data/{imu_filename} deleted successfully")
+
+            os.system(f"rm ./depth_data/{depth_filename}")
+            print(f"./depth_data/{depth_filename} deleted successfully")
+            
+            os.system(f"rm ./lidar_data/{lidar_filename}")
+            print(f"./lidar_data/{lidar_filename} deleted successfully")
+            
             sys.exit()
+
         #os.system(f"mv {file_name} /media/stick/Seagate\ Backup\ Plus\ Drive/")
         #if (args.imu):
             #os.system(f"mv ./imu_data/{imu_filename} /media/stick/Seagate\ Backup\ Plus\ Drive/imu_data/")
+        
         file_path=date_string+"_dataset_drone.csv"
         data=[file_name,n_frames,n_chirps,tc,adc_samples,sampling_rate,periodicity,l,r0,descri]
         if r0==l:
