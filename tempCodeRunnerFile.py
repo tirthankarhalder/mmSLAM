@@ -1,7 +1,1 @@
-
-# defined global path
-today = datetime.date.today()
-date_string = today.strftime('%Y-%m-%d-%H-%M-%S')
-filepath = "./datasets/"
-filepath+=date_string
-Path(filepath).mkdir(parents=True,exist_ok=True)
+dataset=pd.read_csv('2024-08-30_22_27_15_test_dataset_drone.csv')

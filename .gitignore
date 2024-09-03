@@ -34,5 +34,6 @@ dataX4/
 dataRadar/
 datasets/
 HectorSlamX4/
+*.pth
 
 

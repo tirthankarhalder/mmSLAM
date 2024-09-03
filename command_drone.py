@@ -54,10 +54,8 @@ def capture_frame_and_save(folder_path, image_name):
     else:
         print("Error: Failed to capture frame")
 
+header = ["file_name","n_frames","n_chirps","tc","adc_samples","sampling_rate","periodicity","l","r0","descri"]
 
-def execute_lidar():
-   
-    pass
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='parser for params')
@@ -101,8 +99,8 @@ if __name__ == "__main__":
         r0 = str(args.radial)
         descri = args.descp
         date_string+="_" + descri
-        file_name="drone_"+date_string+"_"+".bin"
-        image_name = "drone_"+date_string+"_"+".jpg"
+        file_name="drone_"+date_string+".bin"
+        image_name = "drone_"+date_string+".jpg"
         c_program_args=[file_name,n_frames]
         if(args.camera):
             capture_frame_and_save(image_folder_path, image_name)
@@ -139,7 +137,7 @@ if __name__ == "__main__":
             lidar_thread = threading.Thread(target=collect_lidar_data, args=(lidar_duration,lidar_filename))
             print("Starting the lidar thread")	        
             lidar_thread.start() 
-            time.sleep(3)
+            # time.sleep(3)
 
         if(args.lidar):
             lidar_thread.join()
@@ -164,7 +162,11 @@ if __name__ == "__main__":
         #if (args.imu):
             #os.system(f"mv ./imu_data/{imu_filename} /media/stick/Seagate\ Backup\ Plus\ Drive/imu_data/")
         
-        file_path=date_string+"_dataset_drone.csv"
+        file_path="dataset.csv"
+        with open(file_path, "w") as f:
+            csv.DictWriter(f, fieldnames=header).writeheader()
+
+            
         data=[file_name,n_frames,n_chirps,tc,adc_samples,sampling_rate,periodicity,l,r0,descri]
         if r0==l:
             data.append('Straight')
