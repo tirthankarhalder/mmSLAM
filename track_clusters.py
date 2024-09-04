@@ -96,18 +96,18 @@ def point_cloud_frames(file_name = None):
         reshapedFrame = frameReshape(np_frame, frameConfig)
         rangeResult = rangeFFT(reshapedFrame, frameConfig)
         
-        range_result_absnormal_split = []
-        for i in range(pointCloudProcessCFG.frameConfig.numTxAntennas):
-            for j in range(pointCloudProcessCFG.frameConfig.numRxAntennas):
-                r_r = np.abs(rangeResult[i][j])
-                r_r[:, 0:10] = 0
-                min_val = np.min(r_r)
-                max_val = np.max(r_r)
-                r_r_normalise = (r_r - min_val) / (max_val - min_val) * 1000
-                range_result_absnormal_split.append(r_r_normalise)
-        range_abs_combined_nparray = np.zeros((pointCloudProcessCFG.frameConfig.numLoopsPerFrame, pointCloudProcessCFG.frameConfig.numADCSamples))
-        for ele in range_result_absnormal_split:
-            range_abs_combined_nparray += ele
+        # range_result_absnormal_split = []
+        # for i in range(pointCloudProcessCFG.frameConfig.numTxAntennas):
+        #     for j in range(pointCloudProcessCFG.frameConfig.numRxAntennas):
+        #         r_r = np.abs(rangeResult[i][j])
+        #         r_r[:, 0:10] = 0
+        #         min_val = np.min(r_r)
+        #         max_val = np.max(r_r)
+        #         r_r_normalise = (r_r - min_val) / (max_val - min_val) * 1000
+        #         range_result_absnormal_split.append(r_r_normalise)
+        # range_abs_combined_nparray = np.zeros((pointCloudProcessCFG.frameConfig.numLoopsPerFrame, pointCloudProcessCFG.frameConfig.numADCSamples))
+        # for ele in range_result_absnormal_split:
+        #     range_abs_combined_nparray += ele
         range_abs_combined_nparray /= (pointCloudProcessCFG.frameConfig.numTxAntennas * pointCloudProcessCFG.frameConfig.numRxAntennas)
         range_abs_combined_nparray_collapsed = np.sum(range_abs_combined_nparray, axis=0) / pointCloudProcessCFG.frameConfig.numLoopsPerFrame
         peaks, _ = find_peaks(range_abs_combined_nparray_collapsed)

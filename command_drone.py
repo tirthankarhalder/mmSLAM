@@ -54,7 +54,7 @@ def capture_frame_and_save(folder_path, image_name):
     else:
         print("Error: Failed to capture frame")
 
-header = ["file_name","n_frames","n_chirps","tc","adc_samples","sampling_rate","periodicity","l","r0","descri"]
+header = ["filename","n_frames","n_chirps","tc","adc_samples","sampling_rate","periodicity","l","r0","descri"]
 
 
 if __name__ == "__main__":

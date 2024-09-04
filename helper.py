@@ -249,7 +249,7 @@ def get_info(args):
     dataset=pd.read_csv('2024-08-30_22_27_15_test_dataset_drone.csv')
     print(dataset)
     file_name=args
-    filtered_row=dataset[dataset['file_name']==file_name]
+    filtered_row=dataset[dataset['filename']==file_name]
     info_dict={}
     for col in dataset.columns:
         info_dict[col]=filtered_row[col].values

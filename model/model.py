@@ -3,8 +3,9 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F 
 class MLP(nn.Module):
-    def __init__(self, input_channels, output_channels,relu=True,activation=True):
+    def __init__(self, input_channels, output_channels,num_samples = None,relu=True,activation=True,fps=False):
         super(MLP, self).__init__()
+        self.num_samples = num_samples
         if activation:
             if relu:
                 self.fc = nn.Sequential(
@@ -20,8 +21,10 @@ class MLP(nn.Module):
         else:
             self.fc = nn.Sequential(nn.Linear(input_channels, output_channels))
 
-    def forward(self, x):
-        return self.fc(x)
+    def forward(self,x):
+        
+        output = self.fc(x)
+        return output
 
 
 class DGCNNLayer(nn.Module):
@@ -92,7 +95,7 @@ class ConfidenceScorePredictor(nn.Module):
 
         self.mlp1 = MLP(3,32)
         self.mlp2 = MLP(32,64)
-        self.mlp3 = MLP(64,128)
+        self.mlp3 = MLP(64,128,num_samples=500)
         self.mlp4 = MLP(128,256)
         self.mlp5 = MLP(576,256)
         self.mlp6 = MLP(256,1,relu=False)
@@ -125,7 +128,99 @@ class ConfidenceScorePredictor(nn.Module):
         layer9 = self.mlp5(layer8)
         print("layer9.shape: ",layer9.shape)
         output = self.mlp6(layer9)
-        print("output.shape: ",output.shape)
+        return output
+    
+class PointConvLayer(nn.Module):
+    def __init__(self, input_channels, output_channels,stride=2):
+        super(PointConvLayer, self).__init__()
+        self.conv1d = nn.Conv1d(input_channels , output_channels, kernel_size=1,stride=stride)
+
+    def forward(self, x):
+        x = x.permute(0,2,1)
+        print("PointConv X.shape", x.shape)
+        x = self.conv1d(x)
+        # x = F.relu(x)  
+        x = x.permute(0,2,1)
+        return x
+    
+class MaxPooling(nn.Module):
+    def __init__(self, input_channels, output_channels):
+        super(MaxPooling, self).__init__()
+        self.maxpool = nn.MaxPool1d(kernel_size=1000)
+
+    def forward(self, x):
+        x = x.permute(0,2,1)
+        x = self.maxpool(x) 
+        x = x.squeeze(-1)
+        return x
+    
+def farthest_point_sampling(xyz, npoint):
+    """
+    Input:
+        xyz: input points position data, [B, N, 3]
+        npoint: number of samples
+    Return:
+        centroids: sampled pointcloud index, [B, npoint]
+    """
+    device = xyz.device
+    B, N, C = xyz.shape
+    centroids = torch.zeros(B, npoint, dtype=torch.long).to(device)
+    distance = torch.ones(B, N).to(device) * 1e10
+    farthest = torch.randint(0, N, (B,), dtype=torch.long).to(device)
+    batch_indices = torch.arange(B, dtype=torch.long).to(device)
+    
+    for i in range(npoint):
+        centroids[:, i] = farthest
+        centroid = xyz[batch_indices, farthest, :].view(B, 1, 3)
+        dist = torch.sum((xyz - centroid) ** 2, -1)
+        mask = dist < distance
+        distance[mask] = dist[mask]
+        farthest = torch.max(distance, -1)[1]
+    
+    return centroids
+   
+class NoideAwareFeatureExtractor(nn.Module):
+    def __init__(self):
+        super(NoideAwareFeatureExtractor,self).__init__()
+        self.mlp1 = MLP(4,64)
+        self.mlp2 = MLP(64,256)
+        self.mlp3 = MLP(259,256)
+        self.mlp4 = MLP(256,384)
+        self.mlp5 = MLP(387,384)
+        self.mlp6 = MLP(384,384)
+
+        self.pConv1 = PointConvLayer(256,256)
+        self.pConv2 = PointConvLayer(256,256)
+
+        self.maxPool = MaxPooling(512,512)
+
+
+
+
+    def forward(self,model_weights,x):
+        layer1 = torch.cat((model_weights,x),dim=2)
+        print("layer1.shape",layer1.shape)
+        layer2 = self.mlp1(layer1)
+        print("layer2.shape: ", layer2.shape)
+        layer3 = self.mlp2(layer2)
+        print("layer3.shape: ", layer3.shape)
+        layer4 = self.pConv1(layer3)
+        print("layer4.shape: ",layer4.shape)
+        concat_layer = torch.cat((layer4,x),dim=2)
+        print("concat_layer.shape: ",concat_layer.shape)
+        layer5 = self.mlp3(concat_layer)
+        print("layer5.shape: ",layer5.shape)
+        layer6 = self.mlp4(layer5)
+        print("layer6.shape: ",layer6.shape)
+        layer7 = self.pConv2(layer6)
+        print("layer7.shape: ",layer7.shape)
+        # layer_repeat = layer7.unsqueeze(1).repeat(1,1000,1)
+        # layer8 = torch.cat((layer_repeat,layer6,layer3),dim=2)
+        layer8 = self.mlp5(layer7)
+        print("layer8.shape: ",layer8.shape)
+        layer9 = self.mlp6(layer8)
+        print("layer9.shape: ",layer9.shape)
+        output = self.maxPools(layer9)
         return output
 
 if __name__ == "__main__":
@@ -135,8 +230,15 @@ if __name__ == "__main__":
     output_channels = 32
     device = torch.device("cpu")
 
-    model = ConfidenceScorePredictor().to(device)
+    score = ConfidenceScorePredictor().to(device)
     x = torch.randn(batch_size,N, 3)
-    output = model(x)
-    print("Output shape:", output.shape)
+    model1 = score(x)
+    print("Model1 Output shape:", model1.shape)
+    print("==============================")
+
+    noise = NoideAwareFeatureExtractor().to(device)
+
+    model2 = noise(model1,x)
+
+    print("Model2 Output shape:", model2.shape)
 
