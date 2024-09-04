@@ -138,16 +138,12 @@ class DGCNN(nn.Module):
 class MaxPooling(nn.Module):
     def __init__(self, input_channels, output_channels):
         super(MaxPooling, self).__init__()
-        self.conv = nn.Conv1d(input_channels, output_channels, kernel_size=1)
-        self.maxpool = nn.MaxPool1d(kernel_size=1)
+        self.maxpool = nn.MaxPool1d(kernel_size=1000)
 
     def forward(self, x):
-        # x shape: [batch_size, input_channels, num_points]
         x = x.permute(0,2,1)
-        print("Maxpool: ",x.shape)
-        x = self.conv(x)  
         x = self.maxpool(x) 
-        x = x.permute(0,2,1)
+        x = x.squeeze(-1)
         return x
 
 class ConfidenceScorePredictor(nn.Module):
@@ -185,7 +181,8 @@ class ConfidenceScorePredictor(nn.Module):
         print("layer6.shape: ",layer6.shape)
         layer7 = self.maxPool(layer6)
         print("layer7.shape: ",layer7.shape)
-        layer8 = torch.cat((N*layer7,layer6,layer3),dim=1)
+        layer_repeat = layer7.unsqueeze(1).repeat(1,1000,1)
+        layer8 = torch.cat((layer_repeat,layer6,layer3),dim=2)
         print("layer8.shape: ",layer8.shape)
         layer9 = self.mlp5(layer8)
         print("layer9.shape: ",layer9.shape)
