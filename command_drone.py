@@ -99,7 +99,7 @@ if __name__ == "__main__":
         r0 = str(args.radial)
         descri = args.descp
         date_string+="_" + descri
-        file_name="drone_"+date_string+".bin"
+        file_name="./radar_data/drone_"+date_string+".bin"
         image_name = "drone_"+date_string+".jpg"
         c_program_args=[file_name,n_frames]
         if(args.camera):

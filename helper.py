@@ -247,7 +247,7 @@ def get_args():
 
 def get_info(args):
     dataset=pd.read_csv('2024-08-30_22_27_15_test_dataset_drone.csv')
-    print(dataset)
+    print(dataset['filename'])
     file_name=args
     filtered_row=dataset[dataset['filename']==file_name]
     info_dict={}
