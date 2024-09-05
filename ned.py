@@ -4,7 +4,7 @@ import asyncio
 from mavsdk import System
 import csv
 from datetime import datetime
-
+import os
 header = [
     "datetime",
     "time_usec",
@@ -26,9 +26,21 @@ header = [
 ]
 now = datetime.now()
 date_string = str(now.strftime('%Y-%m-%d_%H_%M_%S'))
-filepath = "home/cm/mmSLAM/telemetry_data/" + date_string + "_telemtry.csv"  
-with open(filepath, "w") as f:
-    csv.DictWriter(f, fieldnames=header).writeheader()
+directory_path = os.path.join('./', 'telemetry_data')
+filename = date_string + "_telemtry.csv"  
+
+full_path = os.path.join(directory_path, filename)
+print(full_path)    
+# Ensure the directory exists
+if not os.path.exists(directory_path):
+    os.makedirs(directory_path)
+    print("Telemetry data directory is created")
+if os.path.exists(full_path):
+    pass
+else:
+
+    with open(full_path, "w") as f:
+        csv.DictWriter(f, fieldnames=header).writeheader()
 
 
 async def print_status_text():
@@ -66,7 +78,7 @@ async def print_status_text():
         }
         
         dict_dumper.update(data)
-        with open(filepath, "a") as f:
+        with open(full_path, "a") as f:
             writer = csv.DictWriter(f, header)
             writer.writerow(dict_dumper)
 
