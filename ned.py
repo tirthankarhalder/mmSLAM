@@ -58,10 +58,10 @@ async def print_status_text():
 
 
     async for odom in drone.telemetry.odometry():
-        print("Odometry_time_usec:", odom.Odometry.time_usec)
+        print("Odometry_time_usec:", odom.time_usec)
         dict_dumper = {'datetime': datetime.now()}
         data = {
-            "time_usec":odom.Odometry.time_usec,
+            "time_usec":odom.time_usec,
             "x_m": odom.position_body.x_m,
             "y_m": odom.position_body.y_m,
             "z_m":odom.position_body.z_m,
