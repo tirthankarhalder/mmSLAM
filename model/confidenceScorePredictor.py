@@ -120,6 +120,7 @@ class ConfidenceScorePredictor(nn.Module):
         layer7 = self.maxPool(layer6)
         print("layer7.shape: ",layer7.shape)
         layer_repeat = layer7.unsqueeze(1).repeat(1,1000,1)
+        print("layer_repeat.shape: ",layer_repeat.shape)
         layer8 = torch.cat((layer_repeat,layer6,layer3),dim=2)
         print("layer8.shape: ",layer8.shape)
         layer9 = self.mlp5(layer8)
