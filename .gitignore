@@ -22,7 +22,8 @@ data_collect_mmwave_only
 .ipynb_checkpoints/
 imu_data/
 depth_data/
-lidar_data
+lidar_data/
+telemetry_data/
 animations/
 *.gif
 **/*.ipynb
