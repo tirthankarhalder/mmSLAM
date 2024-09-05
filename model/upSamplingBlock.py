@@ -25,9 +25,9 @@ class MLP(nn.Module):
         return self.fc(x)
 
 class UpConv1D(nn.Module):
-    def __init__(self, in_channels, out_channels, output_size):
+    def __init__(self, in_channels, out_channels, upsample_ratio):
         super(UpConv1D, self).__init__()
-        self.upconv = nn.ConvTranspose1d(in_channels, out_channels, kernel_size=output_size)
+        self.upconv = nn.ConvTranspose1d(in_channels, out_channels, kernel_size=upsample_ratio)
         
     def forward(self, x):
         x = self.upconv(x)
@@ -96,6 +96,7 @@ class UpSamplingBlock(nn.Module):
         self.mlp4 = MLP(256,128,activation=False)
         self.mlp5 = MLP(128,64)
         self.mlp6 = MLP(64,3,activation=False)
+        self.dgCNN1 = DGCNNLayer(64,64)
         self.upCon = UpConv1D(512,128)
 
     def forward(self, x):
@@ -111,16 +112,11 @@ class UpSamplingBlock(nn.Module):
         print("layer4.shape: ",layer4.shape)
         layer5 = self.mlp4(layer4)
         print("layer5.shape: ",layer5.shape)
-        layer6 = self.dgCNN2(layer5)
+        layer6 = self.upCon(layer5)
         print("layer6.shape: ",layer6.shape)
-        layer7 = self.maxPool(layer6)
+        layer7 = self.mlp5(layer6)
         print("layer7.shape: ",layer7.shape)
-        layer_repeat = layer7.unsqueeze(1).repeat(1,1000,1)
-        layer8 = torch.cat((layer_repeat,layer6,layer3),dim=2)
-        print("layer8.shape: ",layer8.shape)
-        layer9 = self.mlp5(layer8)
-        print("layer9.shape: ",layer9.shape)
-        output = self.mlp6(layer9)
+        output = self.mlp6(layer7)
         print("output.shape: ",output.shape)
         return output
 
