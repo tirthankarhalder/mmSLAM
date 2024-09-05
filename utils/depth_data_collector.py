@@ -78,7 +78,6 @@ def collect_depth_data(duration,filename):
 
             dict_dumper = {'datetime': datetime.now()}
             data = {
-                "datetime" : datetime.now(),
                 "frame_number": points.get_frame_number(),
                 "x":np.asanyarray(points.get_vertices())['f0'],
                 "y":np.asanyarray(points.get_vertices())['f1'],
