@@ -68,6 +68,7 @@ if __name__ == "__main__":
     parser.add_argument('-l', '--length', type=int, help='Initial length')
     parser.add_argument('-r0', '--radial', type=int, help='Initial radial distance')
     parser.add_argument('-d', '--descp', type=str, help='Data description')
+    parser.add_argument('-portL', '--LidarPort', type=str, help='Current Port Lidar')
     parser.add_argument('-camera', action='store_true')
     parser.add_argument('-imu', action='store_true')
     parser.add_argument('-depth', action='store_true')
@@ -85,7 +86,7 @@ if __name__ == "__main__":
     elif(not args.camera):
         camera_pass= True
     if ans1=='yes' and camera_pass: 
-        c_program_path = "/home/stick/mmSLAM/data_collect_mmwave_only" 
+        c_program_path =os.getcwd() + "/data_collect_mmwave_only" 
         image_folder_path = "./scene_annotation/"
         now = datetime.now()
         date_string = str(now.strftime('%Y-%m-%d_%H_%M_%S'))
