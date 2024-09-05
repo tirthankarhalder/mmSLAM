@@ -137,7 +137,11 @@ class NoideAwareFeatureExtractor(nn.Module):
 
     def forward(self,model_weights,x):
         # batch,num_points,_ = x.size()
-        feature_concat = torch.cat((model_weights,x),dim=2)
+        confidenseScore = ConfidenceScorePredictor().to(device)
+        confidenseScoreWeights = confidenseScore(x)
+        print("==============================")
+        
+        feature_concat = torch.cat((confidenseScoreWeights,x),dim=2)
         print("Concat layer.shape",feature_concat.shape)
         layer1 = self.mlp1(feature_concat)
         print("layer1.shape: ", layer1.shape)
@@ -190,12 +194,10 @@ if __name__ == "__main__":
     input_channels = 3
     output_channels = 32
     device = torch.device("cpu")
-    score = ConfidenceScorePredictor().to(device)
+    # score = ConfidenceScorePredictor().to(device)
     noise = NoideAwareFeatureExtractor().to(device)
 
     x = torch.randn(batch_size,N, 3)
-    model1 = score(x)
-    print("==============================")
-    model2 = noise(model1,x)
+    model2 = noise(x)
 
     print("Model2 Output shape:", model2.shape)

@@ -49,6 +49,9 @@ class SeedGenerator(nn.Module):
         self.upCon = UpConv1D(512,128,1)
 
     def forward(self, x):
+
+        # noiseAwareFF = NoideAwareFeatureExtractor().to(device)
+        # noiseAwareFFWeights = noiseAwareFF(x)
         layer1 = self.upCon(x)
         print("layer1.shape",layer1.shape)
         # feature_extractor = NoideAwareFeatureExtractor().to(device)

@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torch.nn.functional as F 
+import torch.nn.functional as F
+from seedGenerator import SeedGenerator 
 class MLP(nn.Module):
     def __init__(self, input_channels, output_channels,relu=True,activation=True):
         super(MLP, self).__init__()
@@ -98,7 +99,9 @@ class UpSamplingBlock(nn.Module):
         self.upCon = UpConv1D(512,128)
 
     def forward(self, x):
-        layer1 = self.upCon(x)
+        # seedGen = SeedGenerator().to(device)
+        # seedGenWwights = seedGen(x)
+        layer1 = self.mlp1(x)
         print("layer1.shape",layer1.shape)
         layer2 = self.mlp2(layer1)
         print("layer2.shape: ", layer2.shape)
