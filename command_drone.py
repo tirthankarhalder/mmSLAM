@@ -164,8 +164,11 @@ if __name__ == "__main__":
             #os.system(f"mv ./imu_data/{imu_filename} /media/stick/Seagate\ Backup\ Plus\ Drive/imu_data/")
         
         file_path="dataset.csv"
-        with open(file_path, "w") as f:
-            csv.DictWriter(f, fieldnames=header).writeheader()
+        if os.path.exists(file_path):
+            pass
+        else:
+            with open(file_path, "w") as f:
+                csv.DictWriter(f, fieldnames=header).writeheader()
 
             
         data=[file_name,n_frames,n_chirps,tc,adc_samples,sampling_rate,periodicity,l,r0,descri]

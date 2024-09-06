@@ -98,7 +98,7 @@ class NoideAwareFeatureExtractor(nn.Module):
         confidenseScore = ConfidenceScorePredictor().to(x.device)
         confidenseScoreWeights = confidenseScore(x)
         print("==============================")
-        
+        print("confidenseScoreWeights.shape",confidenseScoreWeights.shape)
         feature_concat = torch.cat((confidenseScoreWeights,x),dim=2)
         print("Concat layer.shape",feature_concat.shape)
         layer1 = self.mlp1(feature_concat)
@@ -107,68 +107,64 @@ class NoideAwareFeatureExtractor(nn.Module):
         print("layer2.shape: ", layer2.shape)
         # features_dim = torch.randn(batch_size, num_points, 256)
         #have to check
-        layer_down = F.interpolate(layer2.permute(0, 2, 1), size=(500), mode='linear', align_corners=False).permute(0, 2, 1)
-        print("layer_down.shape: ",layer_down.shape)
-
-        layer3 = self.pConv1(layer_down)
-        print("layer3.shape: ",layer3.shape)
-
-        layer_up = F.interpolate(layer3.permute(0, 2, 1), size=(1000), mode='linear', align_corners=False).permute(0, 2, 1)#have to check        
-        print("layer_up.shape: ",layer_up.shape)
+        # layer_down = F.interpolate(layer2.permute(0, 2, 1), size=(500), mode='linear', align_corners=False).permute(0, 2, 1)
+        # print("layer_down.shape: ",layer_down.shape)
 
         B, N, _ = x.shape
-        sampled_idx = farthest_point_sampling(x, 1000)
+        sampled_idx = farthest_point_sampling(x, 500)
+
         new_xyz = torch.gather(x, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, 3))
-        new_features = torch.gather(layer_up, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, layer_up.size(-1)))
-        new_features = torch.cat([new_features, new_xyz], dim=-1)
-        # print("new_features.shape", new_features.shape)
-        # print("new_xyz.shape", new_xyz.shape)
+        new_features = torch.gather(layer2, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, layer2.size(-1)))
+        # new_features = torch.cat([new_features, new_xyz], dim=-1)
+        print("new_features.shape", new_features.shape)
+        print("new_xyz.shape", new_xyz.shape)
 
-        layer_down = F.interpolate(new_features.permute(0, 2, 1), size=(500), mode='linear', align_corners=False).permute(0, 2, 1)
-        print("layer_down.shape: ",layer_down.shape)
+        layer3 = self.pConv1(new_features)
+        print("layer3.shape: ",layer3.shape)
 
-        layer4 = self.mlp3(layer_down)
+
+        concat_layer = torch.cat((new_xyz,layer3),dim=2)
+        print("concat_layer.shape: ", concat_layer.shape)
+
+        layer4 = self.mlp3(concat_layer)
         print("layer4.shape: ",layer4.shape)
-
-        # layer_down = F.interpolate(layer4.permute(0, 2, 1), size=(500), mode='linear', align_corners=False).permute(0, 2, 1)
-        # print("layer_down.shape: ",layer_down.shape)
 
         layer5 = self.mlp4(layer4)
         print("layer5.shape: ",layer5.shape)
 
-        layer_down = F.interpolate(layer5.permute(0, 2, 1), size=(250), mode='linear', align_corners=False).permute(0, 2, 1)
-        print("layer_down.shape: ",layer_down.shape)
+        B, N, _ = new_xyz.shape
+        sampled_idx = farthest_point_sampling(new_xyz, 250)
 
-        layer6 = self.pConv2(layer_down)
+        new_xyz = torch.gather(new_xyz, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, 3))
+        new_features = torch.gather(layer5, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, layer5.size(-1)))
+        # new_features = torch.cat([new_features, new_xyz], dim=-1)
+        print("new_features.shape", new_features.shape)
+        print("new_xyz.shape", new_xyz.shape)
+
+        layer6 = self.pConv2(new_features)
         print("layer6.shape: ",layer6.shape)
 
-        layer_up = F.interpolate(layer6.permute(0, 2, 1), size=(1000), mode='linear', align_corners=False).permute(0, 2, 1)#have to check        
-        print("layer_repeat.shape: ", layer_up.shape)
+        concat_layer = torch.cat((new_xyz,layer6),dim=2)
+        print("concat_layer.shape: ", concat_layer.shape)
 
-        B, N, _ = x.shape
-        sampled_idx = farthest_point_sampling(x, 500)
-        new_xyz = torch.gather(x, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, 3))
-        # print("new_xyz.shape", new_xyz.shape)
-        new_features = torch.gather(layer_up, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, layer_up.size(-1)))
-        new_features = torch.cat([new_features, new_xyz], dim=-1)
-        # print("new_features.shape", new_features.shape)
-
-        layer_down = F.interpolate(new_features.permute(0, 2, 1), size=(250), mode='linear', align_corners=False).permute(0, 2, 1)
-        print("layer_down.shape: ",layer_down.shape)
-
-        layer7 = self.mlp5(layer_down)
+        layer7 = self.mlp5(concat_layer)
         print("layer7.shape: ",layer7.shape)
 
-        layer_down = F.interpolate(layer7.permute(0, 2, 1), size=(250), mode='linear', align_corners=False).permute(0, 2, 1)
-        print("layer_down.shape: ",layer_down.shape)
+        B, N, _ = x.shape
+        sampled_idx = farthest_point_sampling(new_xyz, 125)
 
-        layer8 = self.mlp6(layer_down)
+        new_xyz = torch.gather(x, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, 3))
+        new_features = torch.gather(layer7, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, layer7.size(-1)))
+        # new_features = torch.cat([new_features, new_xyz], dim=-1)
+        print("new_features.shape", new_features.shape)
+        print("new_xyz.shape", new_xyz.shape)
+
+        layer8 = self.mlp6(new_features)
         print("layer8.shape: ",layer8.shape)
 
         output=torch.max(layer8,dim=1).values
-    
-        # output = self.maxPool(layer8)
         print("output.shape: ",output.shape)
+
         return output
 
 if __name__ == "__main__":
