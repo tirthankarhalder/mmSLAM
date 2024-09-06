@@ -8,6 +8,9 @@ FRAMES = 50
 dca_name = sys.argv[1]
 n_frames = int(sys.argv[2])
 
+# dca_name = "datasets/drone_2024-08-31_00_01_42_lab1.bin"
+# n_frames = 200
+
 annotated_fname = dca_name.split("/")[0]+"/only_sensor"+dca_name.split("/")[1]
 FRAMES = n_frames+1
 
@@ -48,7 +51,7 @@ def read_and_print_dca_file(filename, packet_size):
         
         packet_idx_in_frame=0
         while True:
-            
+            print("Index: ",index)
             timestamp_data=file.read(8)
             if not timestamp_data:
                 break

@@ -163,7 +163,7 @@ if __name__ == "__main__":
         #if (args.imu):
             #os.system(f"mv ./imu_data/{imu_filename} /media/stick/Seagate\ Backup\ Plus\ Drive/imu_data/")
         
-        file_path="dataset.csv"
+        file_path="datasets/dataset.csv"
         if os.path.exists(file_path):
             pass
         else:

@@ -246,8 +246,7 @@ def get_args():
 
 
 def get_info(args):
-    dataset=pd.read_csv('2024-08-30_22_27_15_test_dataset_drone.csv')
-    print(dataset['filename'])
+    dataset=pd.read_csv('dataset.csv')
     file_name=args
     filtered_row=dataset[dataset['filename']==file_name]
     info_dict={}
@@ -467,7 +466,7 @@ def get_consistent_peaks(previous_peaks, current_peaks, threshold):
 def run_data_read_only_sensor(info_dict):
     filename = 'datasets/'+info_dict["filename"][0]
     # filename = info_dict["filename"][0]
-    command =f'python3 data_read_only_sensor.py {filename} {info_dict["n_frames"][0]}'
+    command =f'python3 data_read_only_sensor.py {filename} {info_dict[" Nf"][0]}'
     try:
         process = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     except subprocess.CalledProcessError as e:
