@@ -9,7 +9,7 @@ from confidenceScorePredictor import ConfidenceScorePredictor
 def farthest_point_sampling(xyz, npoint):
     device = xyz.device
     B, N, C = xyz.shape
-    print("FPS: ",xyz.shape)
+    # print("FPS: ",xyz.shape)
     centroids = torch.zeros(B, npoint, dtype=torch.long).to(device)
     distance = torch.ones(B, N).to(device) * 1e10
     farthest = torch.randint(0, N, (B,), dtype=torch.long).to(device)
@@ -22,29 +22,9 @@ def farthest_point_sampling(xyz, npoint):
         mask = dist < distance
         distance[mask] = dist[mask]
         farthest = torch.max(distance, -1)[1]
-    
+    # print("centroi.shape: ", centroid.shape)
     return centroids
 
-# class MLP(nn.Module):
-#     def __init__(self, input_channels, output_channels,relu=True,activation=True):
-#         super(MLP, self).__init__()
-#         if activation:
-#             if relu:
-#                 self.fc = nn.Sequential(
-#                     nn.Linear(input_channels, output_channels),  
-#                     nn.ReLU()                                    
-#                 )
-#             else:
-#                 self.fc = nn.Sequential(
-#                     nn.Linear(input_channels, output_channels),  
-#                     nn.Sigmoid()                                    
-#                 )
-
-#         else:
-#             self.fc = nn.Sequential(nn.Linear(input_channels, output_channels))
-
-#     def forward(self, x):
-#         return self.fc(x)
 class MLP(nn.Module):
     def __init__(self, input_channels, output_channels,relu=True,activation=True):
         super(MLP, self).__init__()
@@ -73,35 +53,12 @@ class PointConvLayer(nn.Module):
 
     def forward(self, x):
         x = x.permute(0,2,1)
-        print("PointConv X.shape", x.shape)
+        # print("PointConv X.shape", x.shape)
         x = self.conv1d(x)
         # x = F.relu(x)  
         x = x.permute(0,2,1)
         return x
 
-# class PointConvLayer(nn.Module):
-#     def __init__(self, input_channels, output_channels,num_samples):
-#         super(PointConvLayer, self).__init__()
-#         self.num_samples = num_samples
-#         self.conv1d = nn.Conv1d(input_channels, output_channels, kernel_size=1)
-
-#     def forward(self, x, features):
-#         B, N, _ = x.shape
-#         sampled_idx = farthest_point_sampling(x, self.num_samples)
-#         new_xyz = torch.gather(x, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, 3))
-
-#         new_features = torch.gather(features, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, features.size(-1)))
-#         new_features = torch.cat([new_features, new_xyz], dim=-1)
-#         print("PointConv new_features.shape", new_features.shape)
-
-#         new_features = new_features.permute(0, 2, 1)  # Change shape to [B, F+3, num_samples]
-#         new_features = self.conv1d(new_features)
-#         new_features = new_features.permute(0, 2, 1)
-#         # x = x.permute(0,2,1)
-#         print("PointConv new_xyz.shape", new_xyz.shape)
-#         print("PointConv new_features.shape", new_features.shape)
-
-#         return new_xyz,new_features
 
 class MaxPooling(nn.Module):
     def __init__(self, input_channels, output_channels):
@@ -111,6 +68,7 @@ class MaxPooling(nn.Module):
     def forward(self, x):
         x = x.permute(0,2,1)
         x = self.maxpool(x) 
+        print("x.shape: ",x.shape)
         x = x.squeeze(-1)
         return x
     
@@ -135,9 +93,9 @@ class NoideAwareFeatureExtractor(nn.Module):
 
 
 
-    def forward(self,model_weights,x):
+    def forward(self,x):
         # batch,num_points,_ = x.size()
-        confidenseScore = ConfidenceScorePredictor().to(device)
+        confidenseScore = ConfidenceScorePredictor().to(x.device)
         confidenseScoreWeights = confidenseScore(x)
         print("==============================")
         
@@ -148,43 +106,68 @@ class NoideAwareFeatureExtractor(nn.Module):
         layer2 = self.mlp2(layer1)
         print("layer2.shape: ", layer2.shape)
         # features_dim = torch.randn(batch_size, num_points, 256)
-        layer3 = self.pConv1(layer2)
+        #have to check
+        layer_down = F.interpolate(layer2.permute(0, 2, 1), size=(500), mode='linear', align_corners=False).permute(0, 2, 1)
+        print("layer_down.shape: ",layer_down.shape)
+
+        layer3 = self.pConv1(layer_down)
         print("layer3.shape: ",layer3.shape)
 
-
-        B, N, _ = x.shape
-        sampled_idx = farthest_point_sampling(x, 500)
-        new_xyz = torch.gather(x, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, 3))
-
-        new_features = torch.gather(layer3, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, layer3.size(-1)))
-        new_features = torch.cat([new_features, new_xyz], dim=-1)
-        print("new_features.shape", new_features.shape)
-        print("new_xyz.shape", new_xyz.shape)
-
-
-        layer4 = self.mlp3(new_features)
-
-        print("layer4.shape: ",layer4.shape)
-        layer5 = self.mlp4(layer4)
-        print("layer5.shape: ",layer5.shape)
-        layer6 = self.pConv2(layer5)
-        print("layer6.shape: ",layer6.shape)
+        layer_up = F.interpolate(layer3.permute(0, 2, 1), size=(1000), mode='linear', align_corners=False).permute(0, 2, 1)#have to check        
+        print("layer_up.shape: ",layer_up.shape)
 
         B, N, _ = x.shape
         sampled_idx = farthest_point_sampling(x, 1000)
         new_xyz = torch.gather(x, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, 3))
-
-        new_features = torch.gather(layer6, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, layer6.size(-1)))
+        new_features = torch.gather(layer_up, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, layer_up.size(-1)))
         new_features = torch.cat([new_features, new_xyz], dim=-1)
-        print("new_features.shape", new_features.shape)
+        # print("new_features.shape", new_features.shape)
+        # print("new_xyz.shape", new_xyz.shape)
 
-        layer7 = self.mlp5(new_features)
-        print("new_xyz.shape", new_xyz.shape)
+        layer_down = F.interpolate(new_features.permute(0, 2, 1), size=(500), mode='linear', align_corners=False).permute(0, 2, 1)
+        print("layer_down.shape: ",layer_down.shape)
 
+        layer4 = self.mlp3(layer_down)
+        print("layer4.shape: ",layer4.shape)
+
+        # layer_down = F.interpolate(layer4.permute(0, 2, 1), size=(500), mode='linear', align_corners=False).permute(0, 2, 1)
+        # print("layer_down.shape: ",layer_down.shape)
+
+        layer5 = self.mlp4(layer4)
+        print("layer5.shape: ",layer5.shape)
+
+        layer_down = F.interpolate(layer5.permute(0, 2, 1), size=(250), mode='linear', align_corners=False).permute(0, 2, 1)
+        print("layer_down.shape: ",layer_down.shape)
+
+        layer6 = self.pConv2(layer_down)
+        print("layer6.shape: ",layer6.shape)
+
+        layer_up = F.interpolate(layer6.permute(0, 2, 1), size=(1000), mode='linear', align_corners=False).permute(0, 2, 1)#have to check        
+        print("layer_repeat.shape: ", layer_up.shape)
+
+        B, N, _ = x.shape
+        sampled_idx = farthest_point_sampling(x, 500)
+        new_xyz = torch.gather(x, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, 3))
+        # print("new_xyz.shape", new_xyz.shape)
+        new_features = torch.gather(layer_up, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, layer_up.size(-1)))
+        new_features = torch.cat([new_features, new_xyz], dim=-1)
+        # print("new_features.shape", new_features.shape)
+
+        layer_down = F.interpolate(new_features.permute(0, 2, 1), size=(250), mode='linear', align_corners=False).permute(0, 2, 1)
+        print("layer_down.shape: ",layer_down.shape)
+
+        layer7 = self.mlp5(layer_down)
         print("layer7.shape: ",layer7.shape)
-        layer8 = self.mlp6(layer7)
+
+        layer_down = F.interpolate(layer7.permute(0, 2, 1), size=(250), mode='linear', align_corners=False).permute(0, 2, 1)
+        print("layer_down.shape: ",layer_down.shape)
+
+        layer8 = self.mlp6(layer_down)
         print("layer8.shape: ",layer8.shape)
-        output = self.maxPool(layer8)
+
+        output=torch.max(layer8,dim=1).values
+    
+        # output = self.maxPool(layer8)
         print("output.shape: ",output.shape)
         return output
 

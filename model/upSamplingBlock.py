@@ -30,7 +30,11 @@ class UpConv1D(nn.Module):
         self.upconv = nn.ConvTranspose1d(in_channels, out_channels, kernel_size=upsample_ratio)
         
     def forward(self, x):
+        x = x.permute(0,2,1)
+        # print(x.shape)/
         x = self.upconv(x)
+        x = x.permute(0,2,1)
+
         return x
     
 
@@ -97,18 +101,28 @@ class UpSamplingBlock(nn.Module):
         self.mlp5 = MLP(128,64)
         self.mlp6 = MLP(64,3,activation=False)
         self.dgCNN1 = DGCNNLayer(64,64)
-        self.upCon = UpConv1D(512,128)
+        self.upCon = UpConv1D(128,128,1)#1 is upsample ratio !!!!
 
     def forward(self, x):
-        # seedGen = SeedGenerator().to(device)
-        # seedGenWwights = seedGen(x)
-        layer1 = self.mlp1(x)
+        
+        seedGen = SeedGenerator().to(x.device)
+        seedGenWwights,shape_code = seedGen(x)
+        print("==============================")
+        print("seedGenWwights.shape",seedGenWwights.shape)
+        layer1 = self.mlp1(seedGenWwights)
         print("layer1.shape",layer1.shape)
         layer2 = self.mlp2(layer1)
         print("layer2.shape: ", layer2.shape)
         layer3 = self.dgCNN1(layer2)
         print("layer3.shape: ", layer3.shape)
-        layer4 = self.mlp3(layer3)
+
+        layer_repeat1 = shape_code.unsqueeze(1).repeat(1,1000,1)
+        print("layer_repeat1.shape: ", layer_repeat1.shape)
+
+        concat_layer1 = torch.cat((layer3,layer_repeat1),dim=2)
+        print("concat_layer1.shape: ", concat_layer1.shape)
+
+        layer4 = self.mlp3(concat_layer1)
         print("layer4.shape: ",layer4.shape)
         layer5 = self.mlp4(layer4)
         print("layer5.shape: ",layer5.shape)
@@ -130,5 +144,4 @@ if __name__ == "__main__":
     model = UpSamplingBlock().to(device)
     x = torch.randn(batch_size,N, input_channels)
     output = model(x)
-    print("Output shape:", output.shape)
 
