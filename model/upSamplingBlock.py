@@ -27,7 +27,7 @@ class MLP(nn.Module):
 class UpConv1D(nn.Module):
     def __init__(self, in_channels, out_channels, upsample_ratio):
         super(UpConv1D, self).__init__()
-        self.upconv = nn.ConvTranspose1d(in_channels, out_channels, kernel_size=upsample_ratio)
+        self.upconv = nn.ConvTranspose1d(in_channels, out_channels, kernel_size=3, stride=upsample_ratio, padding=1)
         
     def forward(self, x):
         x = x.permute(0,2,1)
@@ -101,7 +101,7 @@ class UpSamplingBlock(nn.Module):
         self.mlp5 = MLP(128,64)
         self.mlp6 = MLP(64,3,activation=False)
         self.dgCNN1 = DGCNNLayer(64,64)
-        self.upCon = UpConv1D(128,128,1)#1 is upsample ratio !!!!
+        self.upCon = UpConv1D(128,128,2)#1 is upsample ratio !!!!
 
     def forward(self, x):
         

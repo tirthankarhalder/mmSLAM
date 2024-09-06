@@ -86,7 +86,7 @@ def point_cloud_frames(file_name = None):
     run_data_read_only_sensor(info_dict)
     bin_filename = 'datasets/only_sensor' + info_dict['filename'][0]
     bin_reader = RawDataReader(bin_filename)
-    total_frame_number = int(info_dict[' Nf'][0])
+    total_frame_number = int(info_dict['n_frames'][0])
     pointCloudProcessCFG = PointCloudProcessCFG()
     velocities = []
     for frame_no in range(total_frame_number):
@@ -96,18 +96,18 @@ def point_cloud_frames(file_name = None):
         reshapedFrame = frameReshape(np_frame, frameConfig)
         rangeResult = rangeFFT(reshapedFrame, frameConfig)
         
-        # range_result_absnormal_split = []
-        # for i in range(pointCloudProcessCFG.frameConfig.numTxAntennas):
-        #     for j in range(pointCloudProcessCFG.frameConfig.numRxAntennas):
-        #         r_r = np.abs(rangeResult[i][j])
-        #         r_r[:, 0:10] = 0
-        #         min_val = np.min(r_r)
-        #         max_val = np.max(r_r)
-        #         r_r_normalise = (r_r - min_val) / (max_val - min_val) * 1000
-        #         range_result_absnormal_split.append(r_r_normalise)
-        # range_abs_combined_nparray = np.zeros((pointCloudProcessCFG.frameConfig.numLoopsPerFrame, pointCloudProcessCFG.frameConfig.numADCSamples))
-        # for ele in range_result_absnormal_split:
-        #     range_abs_combined_nparray += ele
+        range_result_absnormal_split = []
+        for i in range(pointCloudProcessCFG.frameConfig.numTxAntennas):
+            for j in range(pointCloudProcessCFG.frameConfig.numRxAntennas):
+                r_r = np.abs(rangeResult[i][j])
+                r_r[:, 0:10] = 0
+                min_val = np.min(r_r)
+                max_val = np.max(r_r)
+                r_r_normalise = (r_r - min_val) / (max_val - min_val) * 1000
+                range_result_absnormal_split.append(r_r_normalise)
+        range_abs_combined_nparray = np.zeros((pointCloudProcessCFG.frameConfig.numLoopsPerFrame, pointCloudProcessCFG.frameConfig.numADCSamples))
+        for ele in range_result_absnormal_split:
+            range_abs_combined_nparray += ele
         range_abs_combined_nparray /= (pointCloudProcessCFG.frameConfig.numTxAntennas * pointCloudProcessCFG.frameConfig.numRxAntennas)
         range_abs_combined_nparray_collapsed = np.sum(range_abs_combined_nparray, axis=0) / pointCloudProcessCFG.frameConfig.numLoopsPerFrame
         peaks, _ = find_peaks(range_abs_combined_nparray_collapsed)
@@ -120,7 +120,7 @@ def point_cloud_frames(file_name = None):
         mean_velocity = np.median(vel_array_frame)
         yield pointCloud, mean_velocity
         
-gen=point_cloud_frames(file_name = "drone_2024-08-31_00_01_42_lab1.bin")
+gen=point_cloud_frames(file_name ='drone_2024-08-31_00_01_42_lab1.bin')
 total_data = []
 total_ids = []
 total_frames=0
