@@ -54,7 +54,7 @@ def capture_frame_and_save(folder_path, image_name):
     else:
         print("Error: Failed to capture frame")
 
-header = ["filename","n_frames","n_chirps","tc","adc_samples","sampling_rate","periodicity","l","r0","descri"]
+header = ["filename"," Nf","n_chirps","tc","adc_samples","sampling_rate","periodicity","l","r0","descri"]
 
 
 if __name__ == "__main__":
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     parser.add_argument('-l', '--length', type=int, help='Initial length')
     parser.add_argument('-r0', '--radial', type=int, help='Initial radial distance')
     parser.add_argument('-d', '--descp', type=str, help='Data description')
-    parser.add_argument('-portL', '--LidarPort', type=str, help='Current Port Lidar')
+    # parser.add_argument('-portL', '--LidarPort', type=str, help='Current Port Lidar')
     parser.add_argument('-camera', action='store_true')
     parser.add_argument('-imu', action='store_true')
     parser.add_argument('-depth', action='store_true')
