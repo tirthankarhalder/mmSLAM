@@ -3,6 +3,7 @@ import os
 import time 
 import struct 
 import csv
+import cv2
 import pyrealsense2 as rs
 import numpy as np
 from datetime import datetime
@@ -18,12 +19,15 @@ header = [
 def collect_depth_data(duration,filename):
     # Construct the full path with the desired directory
     directory_path = os.path.join('./', 'depth_data')
+    imageDirectory_path = os.path.join('./', 'image_data')
     full_path = os.path.join(directory_path, filename)
-    print(full_path)    
+    print(full_path)
     # Ensure the directory exists
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
         print("depth_data directory is created")
+        os.makedirs(imageDirectory_path)
+        print("Image_data directory is created")
     
     # Check if the file exists, delete it if it does
     if os.path.exists(full_path):
@@ -50,7 +54,7 @@ def collect_depth_data(duration,filename):
     align = rs.align(align_to)
 
     try:
-	
+        index = 0
         end_time = time.time() + duration
         while(time.time() < end_time):
             # Wait for a coherent pair of frames: depth and color
@@ -109,9 +113,13 @@ def collect_depth_data(duration,filename):
             # Display the color image
             # cv2.imshow('RealSense', color_image)
 
+            images_path = os.path.join(imageDirectory_path,str(index)+".jpg")
+            cv2.imwrite(images_path, color_image)
+            
             # # Exit on 'q' key press
             # if cv2.waitKey(1) & 0xFF == ord('q'):
             #     break
+            index+=1
 
     finally:
         # Stop streaming
