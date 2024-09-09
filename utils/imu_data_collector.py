@@ -10,7 +10,7 @@ def collect_data(duration, filename):
     mpu = adafruit_mpu6050.MPU6050(i2c)
     
     # Construct the full path with the desired directory
-    directory_path = os.path.join('./', 'imu_data')
+    directory_path = os.path.join('./datasets/', 'imu_data')
     full_path = os.path.join(directory_path, filename)
     print(full_path)    
     # Ensure the directory exists

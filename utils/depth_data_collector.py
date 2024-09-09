@@ -18,14 +18,15 @@ header = [
 
 def collect_depth_data(duration,filename):
     # Construct the full path with the desired directory
-    directory_path = os.path.join('./', 'depth_data')
-    imageDirectory_path = os.path.join('./', 'image_data')
+    directory_path = os.path.join('./datasets/', 'depth_data')
+    imageDirectory_path = os.path.join('./datasets/', 'image_data/',str(datetime.now()))
     full_path = os.path.join(directory_path, filename)
     print(full_path)
     # Ensure the directory exists
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
         print("depth_data directory is created")
+    if not os.path.exists(imageDirectory_path):
         os.makedirs(imageDirectory_path)
         print("Image_data directory is created")
     
@@ -113,7 +114,7 @@ def collect_depth_data(duration,filename):
             # Display the color image
             # cv2.imshow('RealSense', color_image)
 
-            images_path = os.path.join(imageDirectory_path,str(index)+".jpg")
+            images_path = os.path.join(imageDirectory_path,str(datetime.now())+".jpg")
             cv2.imwrite(images_path, color_image)
             
             # # Exit on 'q' key press

@@ -8,8 +8,7 @@ from datetime import datetime
 import PyLidar3
 import math
  
-port = "/dev/ttyUSB0" #linux
-Obj = PyLidar3.YdLidarX4(port) #PyLidar3.your_version_of_lidar(port,chunk_size) 
+
 header = list(np.arange(0,360,1))
 header = ['datetime',*header]
 x=[]
@@ -17,9 +16,11 @@ y=[]
 for _ in range(360):
     x.append(0)
     y.append(0)
-def collect_lidar_data(duration, filename):
+def collect_lidar_data(duration, filename,LidarPort):
+    port = LidarPort #linux
+    Obj = PyLidar3.YdLidarX4(port) #PyLidar3.your_version_of_lidar(port,chunk_size) 
     # Construct the full path with the desired directory
-    directory_path = os.path.join('./', 'lidar_data')
+    directory_path = os.path.join('./datasets/', 'lidar_data')
     full_path = os.path.join(directory_path, filename)
     print(full_path)    
     # Ensure the directory exists
@@ -41,6 +42,7 @@ def collect_lidar_data(duration, filename):
         t = time.time() # start time 
         # path = file_create(filepath)
         end_time = time.time() + duration
+        print("Time Left: ",duration-time.time())
         while(time.time() < end_time):
             data = next(gen)
             for angle in range(0,360):

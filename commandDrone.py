@@ -59,7 +59,7 @@ header = ["filename"," Nf","n_chirps","tc","adc_samples","sampling_rate","period
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='parser for params')
-    parser.add_argument('-nf', '--nframes', type=int, default= 100,help='Number of frames')
+    parser.add_argument('-nf', '--nframes', type=int, default= 20,help='Number of frames')
     parser.add_argument('-nc', '--nchirps', type=int, default= 182,help='Number of chirps in a frame, usually 182')
     parser.add_argument('-tc', '--timechirp', type=int, default=72,help='Chrip time is microseconds, usually 72')
     parser.add_argument('-s', '--samples', type=int, default= 256,help='Number of ADC samples, or range bins, usually 256')
@@ -79,6 +79,9 @@ if __name__ == "__main__":
     mac_command = f"sudo macchanger --mac=08:97:98:70:b9:13 eth0"
     print(mac_command)
     os.system(mac_command)
+    args.imu = True
+    args.depth = True
+    args.lidar = True
     if(args.camera):
         ans3=input("Have you connected camera cable? yes/no: ")
         if(ans3=="yes"):
@@ -86,6 +89,7 @@ if __name__ == "__main__":
     elif(not args.camera):
         camera_pass= True
     if ans1=='yes' and camera_pass: 
+        LidarPort = args.LidarPort
         c_program_path =os.getcwd() + "/data_collect_mmwave_only" 
         image_folder_path = "./scene_annotation/"
         now = datetime.now()
@@ -100,7 +104,10 @@ if __name__ == "__main__":
         r0 = str(args.radial)
         descri = args.descp
         date_string+="_" + descri
-        file_name="./radar_data/drone_"+date_string+".bin"
+        file_name="./datasets/radar_data/drone_"+date_string+".bin"
+        if not os.path.exists(file_name):
+            os.makedirs(file_name)
+            print("radar_data directory is created")
         image_name = "drone_"+date_string+".jpg"
         c_program_args=[file_name,n_frames]
         if(args.camera):
@@ -112,36 +119,46 @@ if __name__ == "__main__":
             imu_duration = (int(n_frames)+5)*int(periodicity) / 1000; #periodicity is in ms (collect for 5 extra frames)
             imu_filename = "drone_"+date_string+"_imu.bin"
             imu_thread = threading.Thread(target=collect_data, args=(imu_duration, imu_filename))
-            print("Starting IMU thread")
-            imu_thread.start()
+            
+            # imu_thread.start()
 	         
 
         execute_c_program(c_program_path,c_program_args)
 
-        if(args.imu):
-            imu_thread.join()    
+        # if(args.imu):
+        #     imu_thread.join()    
             # video_thread.join()
 
         if(args.depth):
             depth_duration = (int(n_frames)+5)*int(periodicity) / 1000; #periodicity is in ms (collect for 5 extra frames)
             depth_filename = "drone_"+date_string+"_depth.csv"
             depth_thread = threading.Thread(target=collect_depth_data, args=(depth_duration,depth_filename))
-            print("Starting Depth Camera thread")
-            depth_thread.start()  
+            
+            # depth_thread.start()  
 
-        if(args.depth):
-            depth_thread.join()
+        # if(args.depth):
+        #     depth_thread.join()
         
-        if(args.depth):
+        if(args.lidar):
             lidar_duration = (int(n_frames)+5)*int(periodicity) / 1000; #periodicity is in ms (collect for 5 extra frames)
             lidar_filename = "drone_"+date_string+"_lidar.csv"
-            lidar_thread = threading.Thread(target=collect_lidar_data, args=(lidar_duration,lidar_filename))
-            print("Starting the lidar thread")	        
-            lidar_thread.start() 
+            lidar_thread = threading.Thread(target=collect_lidar_data, args=(lidar_duration,lidar_filename,LidarPort))
+            	        
+            # lidar_thread.start() 
             # time.sleep(3)
 
-        if(args.lidar):
+        # if(args.lidar):
+        #     lidar_thread.join()
+        if(args.imu and args.depth and args.lidar):
+            lidar_thread.start()
+            print("Starting the lidar thread")
+            imu_thread.start()
+            print("Starting IMU thread")
+            depth_thread.start()
+            print("Starting Depth Camera thread")
             lidar_thread.join()
+            depth_thread.join()
+            imu_thread.join()
 
         ans_to_keep=input('Do you want to keep the reading? yes/no : ')
         if(ans_to_keep=='no'):
