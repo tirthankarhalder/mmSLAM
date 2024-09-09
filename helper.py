@@ -49,7 +49,8 @@ class PointCloudProcessCFG:  #
         self.outputInMeter = True
         self.EnergyThrMed = False
         self.EnergyThrPer95 = True
-        self.ConstNoPCD = False
+        # self.ConstNoPCD = False
+        self.ConstNoPCD = True
         self.dopplerToLog = False
         self.NoStaticPoints = True
 
@@ -206,7 +207,7 @@ def frame2pointcloud(dopplerResult, pointCloudProcessCFG, selected_range_bins=No
         idx = np.argwhere(pointCloud[:, 3] != 0).flatten()
         pointCloud = pointCloud[idx]
     if pointCloudProcessCFG.ConstNoPCD:
-        pointCloud = reg_data(pointCloud, 128)  
+        pointCloud = reg_data(pointCloud, 1000)  
 
     return pointCloud
 
