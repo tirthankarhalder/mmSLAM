@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 #Serial port to which lidar connected, Get it from device manager windows
 #In linux type in terminal -- ls /dev/tty* 
 # port = input("Enter port name which lidar is connected:") #windows
-port = "/dev/ttyUSB0" #linux
+port = "/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0" #linux
 Obj = PyLidar3.YdLidarX4(port) #PyLidar3.your_version_of_lidar(port,chunk_size) 
 header = list(np.arange(0,360,1))
 header = ['datetime',*header]

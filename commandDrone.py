@@ -54,7 +54,7 @@ def capture_frame_and_save(folder_path, image_name):
     else:
         print("Error: Failed to capture frame")
 
-header = ["filename"," Nf","n_chirps","tc","adc_samples","sampling_rate","periodicity","l","r0","descri"]
+header = ["filename"," Nf","n_chirps","tc","adc_samples","sampling_rate","periodicity","l","r0","descri","type"]
 
 
 if __name__ == "__main__":
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     parser.add_argument('-l', '--length', type=int, default=-1,help='Initial length')
     parser.add_argument('-r0', '--radial', type=int,default=-1, help='Initial radial distance')
     parser.add_argument('-d', '--descp', type=str,default="test",help='Data description')
-    parser.add_argument('-lp', '--LidarPort', type=str,default="/dev/ttyUSB0",help='Current Port Lidar')
+    parser.add_argument('-lp', '--LidarPort', type=str,default="/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0",help='Current Port Lidar')
     parser.add_argument('-camera', action='store_true')
     parser.add_argument('-imu', action='store_true')
     parser.add_argument('-depth', action='store_true')
