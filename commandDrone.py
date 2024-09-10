@@ -54,7 +54,7 @@ def capture_frame_and_save(folder_path, image_name):
     else:
         print("Error: Failed to capture frame")
 
-header = ["filename"," Nf","n_chirps","tc","adc_samples","sampling_rate","periodicity","l","r0","descri"]
+header = ["filename"," Nf","n_chirps","tc","adc_samples","sampling_rate","periodicity","l","r0","descri","type"]
 
 
 if __name__ == "__main__":
@@ -182,7 +182,7 @@ if __name__ == "__main__":
         #if (args.imu):
             #os.system(f"mv ./imu_data/{imu_filename} /media/stick/Seagate\ Backup\ Plus\ Drive/imu_data/")
         
-        file_path="datasets/dataset.csv"
+        file_path="./datasets/dataset.csv"
         if os.path.exists(file_path):
             pass
         else:
