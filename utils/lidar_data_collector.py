@@ -42,8 +42,9 @@ def collect_lidar_data(duration, filename,LidarPort):
         t = time.time() # start time 
         # path = file_create(filepath)
         end_time = time.time() + duration
-        print("Time Left: ",duration-time.time())
+        
         while(time.time() < end_time):
+            print("Time Left: ",duration-time.time())
             data = next(gen)
             for angle in range(0,360):
                 if(data[angle]>1000):

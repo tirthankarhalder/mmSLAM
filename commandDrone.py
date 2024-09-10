@@ -79,9 +79,9 @@ if __name__ == "__main__":
     mac_command = f"sudo macchanger --mac=08:97:98:70:b9:13 eth0"
     print(mac_command)
     os.system(mac_command)
-    args.imu = True
-    args.depth = True
-    args.lidar = True
+    # args.imu = True
+    # args.depth = True
+    # args.lidar = True
     if(args.camera):
         ans3=input("Have you connected camera cable? yes/no: ")
         if(ans3=="yes"):
@@ -104,12 +104,14 @@ if __name__ == "__main__":
         r0 = str(args.radial)
         descri = args.descp
         date_string+="_" + descri
-        file_name="./datasets/radar_data/drone_"+date_string+".bin"
-        if not os.path.exists(file_name):
-            os.makedirs(file_name)
+        file_name = "drone_"+date_string+".bin"
+        radar_directoryPath = "./datasets/radar_data/"
+        radarFullDirectoryPath = radar_directoryPath + file_name
+        if not os.path.exists(radar_directoryPath):
+            os.makedirs(radar_directoryPath)
             print("radar_data directory is created")
         image_name = "drone_"+date_string+".jpg"
-        c_program_args=[file_name,n_frames]
+        c_program_args=[radarFullDirectoryPath,n_frames]
         if(args.camera):
             capture_frame_and_save(image_folder_path, image_name)
         # video_filename =  date_string+"_"+pwm_value+".mp4"
@@ -162,17 +164,17 @@ if __name__ == "__main__":
 
         ans_to_keep=input('Do you want to keep the reading? yes/no : ')
         if(ans_to_keep=='no'):
-            os.system(f"rm {file_name}")
-            print(f"{file_name} deleted successfully")
+            os.system(f"rm {radarFullDirectoryPath}")
+            print(f"{radarFullDirectoryPath} deleted successfully")
 
-            os.system(f"rm ./imu_data/{imu_filename}")
-            print(f"./imu_data/{imu_filename} deleted successfully")
+            os.system(f"rm ./datasets/imu_data/{imu_filename}")
+            print(f"./datasets/imu_data/{imu_filename} deleted successfully")
 
-            os.system(f"rm ./depth_data/{depth_filename}")
-            print(f"./depth_data/{depth_filename} deleted successfully")
+            os.system(f"rm ./datasets/depth_data/{depth_filename}")
+            print(f"./datasets/depth_data/{depth_filename} deleted successfully")
             
-            os.system(f"rm ./lidar_data/{lidar_filename}")
-            print(f"./lidar_data/{lidar_filename} deleted successfully")
+            os.system(f"rm ./datasets/lidar_data/{lidar_filename}")
+            print(f"./datasets/lidar_data/{lidar_filename} deleted successfully")
             
             sys.exit()
 
