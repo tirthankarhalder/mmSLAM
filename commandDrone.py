@@ -120,7 +120,8 @@ if __name__ == "__main__":
         if(args.imu):
             imu_duration = (int(n_frames)+5)*int(periodicity) / 1000; #periodicity is in ms (collect for 5 extra frames)
             imu_filename = "drone_"+date_string+"_imu.bin"
-            imu_thread = threading.Thread(target=collect_data, args=(imu_duration, imu_filename))
+            imu_csvFilename = "drone_"+date_string+"_imu.csv"
+            imu_thread = threading.Thread(target=collect_data, args=(imu_duration, imu_filename,imu_csvFilename))
             
             # imu_thread.start()
 	         
