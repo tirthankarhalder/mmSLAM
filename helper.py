@@ -247,8 +247,10 @@ def get_args():
 
 
 def get_info(args):
-    dataset=pd.read_csv('dataset.csv')
+    dataset=pd.read_csv('./datasets/dataset.csv')
+    print(dataset)
     file_name=args
+    file_name = file_name.split("/")[3]
     filtered_row=dataset[dataset['filename']==file_name]
     info_dict={}
     for col in dataset.columns:

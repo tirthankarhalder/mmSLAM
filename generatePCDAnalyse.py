@@ -28,7 +28,7 @@ def point_cloud_frames(file_name = None):
         pcds.append(pointCloud)
     return pcds
         
-gen=point_cloud_frames(file_name ='2024-03-29_vicon_test_14.bin')
+gen=point_cloud_frames(file_name ='./datasets/radar_data/drone_2024-09-10_16_12_18_test.bin')
 total_data = []
 total_ids = []
 total_frames=0
