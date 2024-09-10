@@ -5,7 +5,7 @@ import seaborn as sns
 def point_cloud_frames(file_name = None):
     info_dict = get_info(file_name)
     run_data_read_only_sensor(info_dict)
-    bin_filename = 'datasets/only_sensor' + info_dict['filename'][0]
+    bin_filename = './datasets/radar_data/only_sensor_' + info_dict['filename'][0]
     bin_reader = RawDataReader(bin_filename)
     total_frame_number = int(info_dict[' Nf'][0])
     pointCloudProcessCFG = PointCloudProcessCFG()

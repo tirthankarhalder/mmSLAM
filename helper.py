@@ -467,7 +467,7 @@ def get_consistent_peaks(previous_peaks, current_peaks, threshold):
     return consistent_peaks
 
 def run_data_read_only_sensor(info_dict):
-    filename = 'datasets/'+info_dict["filename"][0]
+    filename = './datasets/radar_data/'+info_dict["filename"][0]
     # filename = info_dict["filename"][0]
     command =f'python3 data_read_only_sensor.py {filename} {info_dict[" Nf"][0]}'
     try:

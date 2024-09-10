@@ -5,13 +5,13 @@ import os
 
 FRAMES = 50
 
-dca_name = sys.argv[1]
-n_frames = int(sys.argv[2])
+# dca_name = sys.argv[1]
+# n_frames = int(sys.argv[2])
 
-# dca_name = "datasets/drone_2024-08-31_00_01_42_lab1.bin"
-# n_frames = 200
+dca_name = "./datasets/radar_data/drone_2024-09-10_16_12_18_test.bin"
+n_frames = 20
 
-annotated_fname = dca_name.split("/")[0]+"/only_sensor"+dca_name.split("/")[1]
+annotated_fname = dca_name.split("/")[0]+"/" +dca_name.split("/")[1] + "/" + dca_name.split("/")[2] + "/only_sensor_"+dca_name.split("/")[3]
 FRAMES = n_frames+1
 
 ADC_PARAMS = {'chirps': 128,  # 32
@@ -133,7 +133,7 @@ def annotate(dca_array,frames):
 
 
 def annotate_time_stamp(dca_time_array,frames):
-    annotated_fname = "time_stamps/time"+dca_name.split("/")[1]
+    annotated_fname = "./datasets/time_stamps/time_"+dca_name.split("/")[3]
     if os.path.exists(annotated_fname):
         os.remove(annotated_fname)
     annotation_file = open(annotated_fname, "ab")
@@ -145,6 +145,6 @@ def annotate_time_stamp(dca_time_array,frames):
 
 dca_array,dca_time_array=read_and_print_dca_file(dca_name,1466)
 annotate(dca_array,FRAMES)
-annotate_time_stamp(dca_time_array, FRAMES)
+# annotate_time_stamp(dca_time_array, FRAMES)
 # print(dca_array.shape)cols), dtype=np.uint16)
     
