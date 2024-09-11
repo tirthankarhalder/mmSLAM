@@ -80,10 +80,12 @@ def collect_depth_data(duration,filename):
             points = pc.calculate(depth_frame)
             pc.map_to(color_frame)
             # print(points.get_vertices())
+            pcdFrame = [list(tup) for tup in np.asanyarray(points.get_vertices())]
 
             dict_dumper = {'datetime': datetime.now()}
             data = {
                 "frame_number": points.get_frame_number(),
+                "depthPCD":pcdFrame,
                 "x":np.asanyarray(points.get_vertices())['f0'],
                 "y":np.asanyarray(points.get_vertices())['f1'],
                 "z":np.asanyarray(points.get_vertices())['f2']

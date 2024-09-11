@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F 
-from confidenceScorePredictor import ConfidenceScorePredictor
+from .confidenceScorePredictor import ConfidenceScorePredictor
 
 
 
@@ -165,7 +165,7 @@ class NoideAwareFeatureExtractor(nn.Module):
         output=torch.max(layer8,dim=1).values
         print("output.shape: ",output.shape)
 
-        return output
+        return output,confidenseScoreWeights
 
 if __name__ == "__main__":
     batch_size = 32

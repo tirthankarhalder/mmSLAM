@@ -5,11 +5,11 @@ import os
 
 FRAMES = 50
 
-# dca_name = sys.argv[1]
-# n_frames = int(sys.argv[2])
+dca_name = sys.argv[1]
+n_frames = int(sys.argv[2])
 
-dca_name = "./datasets/radar_data/drone_2024-09-10_16_12_18_test.bin"
-n_frames = 20
+# dca_name = "./datasets/radar_data/drone_2024-09-10_16_12_18_test.bin"
+# n_frames = 20
 
 annotated_fname = dca_name.split("/")[0]+"/" +dca_name.split("/")[1] + "/" + dca_name.split("/")[2] + "/only_sensor_"+dca_name.split("/")[3]
 FRAMES = n_frames+1
@@ -145,6 +145,6 @@ def annotate_time_stamp(dca_time_array,frames):
 
 dca_array,dca_time_array=read_and_print_dca_file(dca_name,1466)
 annotate(dca_array,FRAMES)
-# annotate_time_stamp(dca_time_array, FRAMES)
+annotate_time_stamp(dca_time_array, FRAMES)
 # print(dca_array.shape)cols), dtype=np.uint16)
     

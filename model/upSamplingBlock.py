@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from seedGenerator import SeedGenerator 
+from .seedGenerator import SeedGenerator 
+from .customLossFunction import ChamferDistance
 class MLP(nn.Module):
     def __init__(self, input_channels, output_channels,relu=True,activation=True):
         super(MLP, self).__init__()
@@ -106,7 +107,7 @@ class UpSamplingBlock(nn.Module):
     def forward(self, x):
         
         seedGen = SeedGenerator().to(x.device)
-        seedGenWwights,shape_code = seedGen(x)
+        seedGenWwights,noiseAwareFFWeights,confidenseScoreWeights = seedGen(x)
         print("==============================")
         print("seedGenWwights.shape",seedGenWwights.shape)
         layer1 = self.mlp1(seedGenWwights)
@@ -116,7 +117,7 @@ class UpSamplingBlock(nn.Module):
         layer3 = self.dgCNN1(layer2)
         print("layer3.shape: ", layer3.shape)
 
-        layer_repeat1 = shape_code.unsqueeze(1).repeat(1,1000,1)
+        layer_repeat1 = noiseAwareFFWeights.unsqueeze(1).repeat(1,1000,1)
         print("layer_repeat1.shape: ", layer_repeat1.shape)
 
         concat_layer1 = torch.cat((layer3,layer_repeat1),dim=2)
@@ -132,7 +133,7 @@ class UpSamplingBlock(nn.Module):
         print("layer7.shape: ",layer7.shape)
         output = self.mlp6(layer7)
         print("output.shape: ",output.shape)
-        return output
+        return output,seedGenWwights,noiseAwareFFWeights,confidenseScoreWeights
 
 if __name__ == "__main__":
     batch_size = 32

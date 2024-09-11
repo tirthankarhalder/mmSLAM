@@ -5,9 +5,11 @@ import cv2
 #csv writer
 import csv
 from datetime import datetime
+import time
 header = [
     "datetime",
     "frame_number",
+    "depthPCD",
     "x",
     "y",
     "z"
@@ -33,7 +35,8 @@ align_to = rs.stream.color
 align = rs.align(align_to)
 
 try:
-    while True:
+    endTime = time.time() +2
+    while time.time()<endTime:
         # Wait for a coherent pair of frames: depth and color
         frames = pipeline.wait_for_frames()
         
@@ -55,15 +58,19 @@ try:
         pc = rs.pointcloud()
         points = pc.calculate(depth_frame)
         pc.map_to(color_frame)
-        # print(points.get_vertices())
-
+        pcd = [list(tup) for tup in np.asanyarray(points.get_vertices())]
+        # print(array_of_lists)
+        # print(np.asanyarray(points.get_vertices()).tolist())
+        # break
+# 
         dict_dumper = {'datetime': datetime.now()}
         data = {
             "datetime" : datetime.now(),
             "frame_number": points.get_frame_number(),
-            "x":np.asanyarray(points.get_vertices())['f0'],
-            "y":np.asanyarray(points.get_vertices())['f1'],
-            "z":np.asanyarray(points.get_vertices())['f2']
+            "depthPCD":pcd,
+            "x":list(np.asanyarray(points.get_vertices())['f0']),
+            "y":list(np.asanyarray(points.get_vertices())['f1']),
+            "z":list(np.asanyarray(points.get_vertices())['f2'])
         }
         
         dict_dumper.update(data)

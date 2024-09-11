@@ -123,45 +123,35 @@ if __name__ == "__main__":
             imu_csvFilename = "drone_"+date_string+"_imu.csv"
             imu_thread = threading.Thread(target=collect_data, args=(imu_duration, imu_filename,imu_csvFilename))
             
-            # imu_thread.start()
-	         
-
-        execute_c_program(c_program_path,c_program_args)
-
-        # if(args.imu):
-        #     imu_thread.join()    
-            # video_thread.join()
-
+            imu_thread.start()
+            print("Starting IMU thread")
         if(args.depth):
             depth_duration = (int(n_frames)+5)*int(periodicity) / 1000; #periodicity is in ms (collect for 5 extra frames)
             depth_filename = "drone_"+date_string+"_depth.csv"
             depth_thread = threading.Thread(target=collect_depth_data, args=(depth_duration,depth_filename))
             
-            # depth_thread.start()  
-
-        # if(args.depth):
-        #     depth_thread.join()
-        
+            depth_thread.start()
+            print("Starting Depth Camera thread")
         if(args.lidar):
             lidar_duration = (int(n_frames)+5)*int(periodicity) / 1000; #periodicity is in ms (collect for 5 extra frames)
             lidar_filename = "drone_"+date_string+"_lidar.csv"
             lidar_thread = threading.Thread(target=collect_lidar_data, args=(lidar_duration,lidar_filename,LidarPort))
             	        
-            # lidar_thread.start() 
-            # time.sleep(3)
-
-        # if(args.lidar):
-        #     lidar_thread.join()
-        if(args.imu and args.depth and args.lidar):
-            lidar_thread.start()
+            lidar_thread.start() 
             print("Starting the lidar thread")
-            imu_thread.start()
-            print("Starting IMU thread")
-            depth_thread.start()
-            print("Starting Depth Camera thread")
-            lidar_thread.join()
+            # time.sleep(3)     
+
+        execute_c_program(c_program_path,c_program_args)
+
+        if(args.imu):
+            imu_thread.join()    
+            # video_thread.join()
+
+        if(args.depth):
             depth_thread.join()
-            imu_thread.join()
+        
+        if(args.lidar):
+            lidar_thread.join()
 
         ans_to_keep=input('Do you want to keep the reading? yes/no : ')
         if(ans_to_keep=='no'):

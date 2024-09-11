@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F 
-from noiseAwareFeatureExtractor import NoideAwareFeatureExtractor
+from .noiseAwareFeatureExtractor import NoideAwareFeatureExtractor
 class MLP(nn.Module):
     def __init__(self, input_channels, output_channels,relu=True,activation=True):
         super(MLP, self).__init__()
@@ -50,7 +50,7 @@ class SeedGenerator(nn.Module):
 
     def forward(self, x):
         noiseAwareFF = NoideAwareFeatureExtractor().to(x.device)
-        noiseAwareFFWeights = noiseAwareFF(x)
+        noiseAwareFFWeights,confidenseScoreWeights = noiseAwareFF(x)
         print("==============================")
         print("noiseAwareFFWeights.shape",noiseAwareFFWeights.shape)
 
@@ -85,7 +85,7 @@ class SeedGenerator(nn.Module):
         print("layer6.shape: ",layer6.shape)
         output = self.mlp6(layer6)
         print("output.shape: ",output.shape)
-        return output,noiseAwareFFWeights
+        return output,noiseAwareFFWeights,confidenseScoreWeights
 
 if __name__ == "__main__":
     batch_size = 32

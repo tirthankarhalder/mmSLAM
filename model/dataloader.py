@@ -16,15 +16,18 @@ class PointCloudDataset(Dataset):
         point_cloud = self.data[idx]
         point_cloud = torch.tensor(point_cloud, dtype=torch.float32)  # Convert to PyTorch tensor
         return point_cloud
-num_samples = 10000  
-point_cloud_data = np.random.rand(num_samples, 1000, 3) 
-print(point_cloud_data.shape)
-dataset = PointCloudDataset(point_cloud_data)
+    
+if __name__ == "__main__":
 
-batch_size = 32
-dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    num_samples = 10000  
+    point_cloud_data = np.random.rand(num_samples, 1000, 3) 
+    print(point_cloud_data.shape)
+    dataset = PointCloudDataset(point_cloud_data)
 
-# Iterate through the DataLoader and process the point cloud data
-for batch_idx, point_cloud_batch in enumerate(dataloader):
-    print(f"Batch {batch_idx+1}:")
-    print(f"Shape of point cloud batch: {point_cloud_batch.shape}")  #(32, 1000, 3)
+    batch_size = 32
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+    # Iterate through the DataLoader and process the point cloud data
+    for batch_idx, point_cloud_batch in enumerate(dataloader):
+        print(f"Batch {batch_idx+1}:")
+        print(f"Shape of point cloud batch: {point_cloud_batch.shape}")  #(32, 1000, 3)
