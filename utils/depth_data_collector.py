@@ -10,6 +10,7 @@ from datetime import datetime
 header = [
         "datetime",
         "frame_number",
+        "depthPCD",
         "x",
         "y",
         "z"
