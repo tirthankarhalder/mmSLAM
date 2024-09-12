@@ -34,8 +34,8 @@ for epoch in range(epochs):
     running_loss = 0.0
     for batch_idx, (point_cloud_batch,point_cloud_batchGroundTruth) in enumerate(zip(dataloader, dataloaderGrounfTruth)):
         print(f"Batch {batch_idx+1}:")
-        print(f"Shape of point cloud batch: {point_cloud_batch.shape}")  #(32, 1000, 3)
-        print(f"Shape of GroundTruth point cloud batch: {point_cloud_batchGroundTruth.shape}")  #(32, 1000, 3)
+        # print(f"Shape of point clzoud batch: {point_cloud_batch.shape}")  #(32, 1000, 3)
+        # print(f"Shape of GroundTruth point cloud batch: {point_cloud_batchGroundTruth.shape}")  #(32, 1000, 3)
 
         optimizer.zero_grad()
 
@@ -46,6 +46,7 @@ for epoch in range(epochs):
         optimizer.step()
 
         running_loss += loss.item()
-        if batch_idx % 10 == 9:  
-            print(f'Epoch [{epoch+1}/{epochs}], Batch [{batch_idx+1}/{len(dataloader)}], Loss: {running_loss / 10:.4f}')
-            running_loss = 0.0
+        print(f'Epoch [{epoch+1}/{epochs}], Batch [{batch_idx+1}/{len(dataloader)}], Loss: {running_loss / 10:.4f}')
+        # if batch_idx % 10 == 9:  
+        #     print(f'Epoch [{epoch+1}/{epochs}], Batch [{batch_idx+1}/{len(dataloader)}], Loss: {running_loss / 10:.4f}')
+        #     running_loss = 0.0
