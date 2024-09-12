@@ -58,8 +58,8 @@ def collect_depth_data(duration,filename):
     try:
         index = 0
         end_time = time.time() + duration
-        while(True):
-        # while(time.time() < end_time):
+        # while(True):
+        while(time.time() < end_time):
             # Wait for a coherent pair of frames: depth and color
             frames = pipeline.wait_for_frames()
             

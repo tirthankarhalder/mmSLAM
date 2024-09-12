@@ -43,8 +43,8 @@ def collect_lidar_data(duration, filename,LidarPort):
         # path = file_create(filepath)
         end_time = time.time() + duration
         
-        # while(time.time() < end_time):
-        while(True):
+        while(time.time() < end_time):
+        # while(True):
             print("Time Left: ",duration-time.time())
             data = next(gen)
             for angle in range(0,360):

@@ -36,8 +36,8 @@ def collect_data(duration, filename,csvfilename):
 
     with open(full_path, 'wb') as file:
         end_time = time.time() + duration
-        while(True):
-        # while(time.time() < end_time):
+        # while(True):
+        while(time.time() < end_time):
             ax = mpu.acceleration[0]
             ay = mpu.acceleration[1]
             az = mpu.acceleration[2]
