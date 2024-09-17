@@ -97,14 +97,14 @@ class NoideAwareFeatureExtractor(nn.Module):
         # batch,num_points,_ = x.size()
         confidenseScore = ConfidenceScorePredictor().to(x.device)
         confidenseScoreWeights = confidenseScore(x)
-        # print("==============================")
-        # print("confidenseScoreWeights.shape",confidenseScoreWeights.shape)
+        print("==============================")
+        print("confidenseScoreWeights.shape",confidenseScoreWeights.shape)
         feature_concat = torch.cat((confidenseScoreWeights,x),dim=2)
-        # print("Concat layer.shape",feature_concat.shape)
+        print("Concat layer.shape",feature_concat.shape)
         layer1 = self.mlp1(feature_concat)
-        # print("layer1.shape: ", layer1.shape)
+        print("layer1.shape: ", layer1.shape)
         layer2 = self.mlp2(layer1)
-        # print("layer2.shape: ", layer2.shape)
+        print("layer2.shape: ", layer2.shape)
 
         B, N, _ = x.shape
         sampled_idx = farthest_point_sampling(x, 500)
@@ -112,21 +112,21 @@ class NoideAwareFeatureExtractor(nn.Module):
         new_xyz = torch.gather(x, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, 3))
         new_features = torch.gather(layer2, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, layer2.size(-1)))
         # new_features = torch.cat([new_features, new_xyz], dim=-1)
-        # print("new_features.shape", new_features.shape)
-        # print("new_xyz.shape", new_xyz.shape)
+        print("new_features.shape", new_features.shape)
+        print("new_xyz.shape", new_xyz.shape)
 
         layer3 = self.pConv1(new_features)
-        # print("layer3.shape: ",layer3.shape)
+        print("layer3.shape: ",layer3.shape)
 
 
         concat_layer = torch.cat((new_xyz,layer3),dim=2)
-        # print("concat_layer.shape: ", concat_layer.shape)
+        print("concat_layer.shape: ", concat_layer.shape)
 
         layer4 = self.mlp3(concat_layer)
-        # print("layer4.shape: ",layer4.shape)
+        print("layer4.shape: ",layer4.shape)
 
         layer5 = self.mlp4(layer4)
-        # print("layer5.shape: ",layer5.shape)
+        print("layer5.shape: ",layer5.shape)
 
         B, N, _ = new_xyz.shape
         sampled_idx = farthest_point_sampling(new_xyz, 250)
@@ -134,17 +134,17 @@ class NoideAwareFeatureExtractor(nn.Module):
         new_xyz = torch.gather(new_xyz, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, 3))
         new_features = torch.gather(layer5, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, layer5.size(-1)))
         # new_features = torch.cat([new_features, new_xyz], dim=-1)
-        # print("new_features.shape", new_features.shape)
-        # print("new_xyz.shape", new_xyz.shape)
+        print("new_features.shape", new_features.shape)
+        print("new_xyz.shape", new_xyz.shape)
 
         layer6 = self.pConv2(new_features)
-        # print("layer6.shape: ",layer6.shape)
+        print("layer6.shape: ",layer6.shape)
 
         concat_layer = torch.cat((new_xyz,layer6),dim=2)
-        # print("concat_layer.shape: ", concat_layer.shape)
+        print("concat_layer.shape: ", concat_layer.shape)
 
         layer7 = self.mlp5(concat_layer)
-        # print("layer7.shape: ",layer7.shape)
+        print("layer7.shape: ",layer7.shape)
 
         B, N, _ = x.shape
         sampled_idx = farthest_point_sampling(new_xyz, 125)
@@ -152,14 +152,14 @@ class NoideAwareFeatureExtractor(nn.Module):
         new_xyz = torch.gather(x, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, 3))
         new_features = torch.gather(layer7, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, layer7.size(-1)))
         # new_features = torch.cat([new_features, new_xyz], dim=-1)
-        # print("new_features.shape", new_features.shape)
-        # print("new_xyz.shape", new_xyz.shape)
+        print("new_features.shape", new_features.shape)
+        print("new_xyz.shape", new_xyz.shape)
 
         layer8 = self.mlp6(new_features)
-        # print("layer8.shape: ",layer8.shape)
+        print("layer8.shape: ",layer8.shape)
 
         output=torch.max(layer8,dim=1).values
-        # print("output.shape: ",output.shape)
+        print("output.shape: ",output.shape)
 
         return output,confidenseScoreWeights
 

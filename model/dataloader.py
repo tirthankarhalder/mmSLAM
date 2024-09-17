@@ -14,13 +14,14 @@ class PointCloudDataset(Dataset):
         return len(self.data)
     def __getitem__(self, idx):
         point_cloud = self.data[idx]
-        point_cloud = torch.tensor(point_cloud, dtype=torch.float32)  # Convert to PyTorch tensor
+        # point_cloud = point_cloud.detach().clone()
+        point_cloud = torch.tensor(point_cloud, dtype=torch.float32)  
         return point_cloud
     
 if __name__ == "__main__":
 
     num_samples = 10000  
-    point_cloud_data = np.random.rand(num_samples, 1000, 3) 
+    point_cloud_data = np.random.rand(num_samples, 100000, 3) 
     print(point_cloud_data.shape)
     dataset = PointCloudDataset(point_cloud_data)
 

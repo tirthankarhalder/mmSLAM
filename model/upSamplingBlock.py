@@ -28,7 +28,10 @@ class MLP(nn.Module):
 class UpConv1D(nn.Module):
     def __init__(self, in_channels, out_channels, upsample_ratio):
         super(UpConv1D, self).__init__()
-        self.upconv = nn.ConvTranspose1d(in_channels, out_channels, kernel_size=3, stride=upsample_ratio, padding=1)
+        # [32, 1000, 128] ->> [32, 1999, 128]
+        # self.upconv = nn.ConvTranspose1d(in_channels, out_channels, kernel_size=3, stride=upsample_ratio, padding=1)
+        # [32, 1000, 128] ->> [32, 2000, 128]
+        self.upconv = nn.ConvTranspose1d(in_channels, out_channels, kernel_size=2, stride=upsample_ratio)
         
     def forward(self, x):
         x = x.permute(0,2,1)
@@ -108,31 +111,31 @@ class UpSamplingBlock(nn.Module):
         
         seedGen = SeedGenerator().to(x.device)
         seedGenWwights,noiseAwareFFWeights,confidenseScoreWeights = seedGen(x)
-        # print("==============================")
-        # print("seedGenWwights.shape",seedGenWwights.shape)
+        print("==============================")
+        print("seedGenWwights.shape",seedGenWwights.shape)
         layer1 = self.mlp1(seedGenWwights)
-        # print("layer1.shape",layer1.shape)
+        print("layer1.shape",layer1.shape)
         layer2 = self.mlp2(layer1)
-        # print("layer2.shape: ", layer2.shape)
+        print("layer2.shape: ", layer2.shape)
         layer3 = self.dgCNN1(layer2)
-        # print("layer3.shape: ", layer3.shape)
+        print("layer3.shape: ", layer3.shape)
 
         layer_repeat1 = noiseAwareFFWeights.unsqueeze(1).repeat(1,1000,1)
-        # print("layer_repeat1.shape: ", layer_repeat1.shape)
+        print("layer_repeat1.shape: ", layer_repeat1.shape)
 
         concat_layer1 = torch.cat((layer3,layer_repeat1),dim=2)
-        # print("concat_layer1.shape: ", concat_layer1.shape)
+        print("concat_layer1.shape: ", concat_layer1.shape)
 
         layer4 = self.mlp3(concat_layer1)
-        # print("layer4.shape: ",layer4.shape)
+        print("layer4.shape: ",layer4.shape)
         layer5 = self.mlp4(layer4)
-        # print("layer5.shape: ",layer5.shape)
+        print("layer5.shape: ",layer5.shape)
         layer6 = self.upCon(layer5)
-        # print("layer6.shape: ",layer6.shape)
+        print("layer6.shape: ",layer6.shape)
         layer7 = self.mlp5(layer6)
-        # print("layer7.shape: ",layer7.shape)
+        print("layer7.shape: ",layer7.shape)
         output = self.mlp6(layer7)
-        # print("output.shape: ",output.shape)
+        print("output.shape: ",output.shape)
         return output,seedGenWwights,noiseAwareFFWeights,confidenseScoreWeights
 
 if __name__ == "__main__":
