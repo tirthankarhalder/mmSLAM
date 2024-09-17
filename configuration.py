@@ -2,7 +2,8 @@ import numpy as np
 
 NUM_TX = 3 # tx order tx0,tx2,tx1, face to the board (left,right,upper) 
 NUM_RX = 4
-
+VIRT_ANT = NUM_TX*NUM_RX
+SKIP_SIZE = 4
 START_FREQ = 77 
 ADC_START_TIME = 6 
 FREQ_SLOPE = 60.012
@@ -29,3 +30,4 @@ DOPPLER_RESOLUTION = 3e8 / (2 * START_FREQ * 1e9 * (IDLE_TIME + RAMP_END_TIME) *
 MAX_DOPPLER = 3e8 / (4 * START_FREQ * 1e9 * (IDLE_TIME + RAMP_END_TIME) * 1e-6 * NUM_TX)
 
 MMWAVE_RADAR_LOC=np.array([[0.146517, -3.030810, 1.0371905]]) # hard code the location of mmWave radar
+FRAME_SIZE = ADC_SAMPLES*LOOPS_PER_FRAME*NUM_TX*NUM_RX 

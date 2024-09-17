@@ -14,7 +14,7 @@ n_frames = int(sys.argv[2])
 annotated_fname = dca_name.split("/")[0]+"/" +dca_name.split("/")[1] + "/" + dca_name.split("/")[2] + "/only_sensor_"+dca_name.split("/")[3]
 FRAMES = n_frames+1
 
-ADC_PARAMS = {'chirps': 128,  # 32
+ADC_PARAMS = {'chirps': 182,  # 32
               'rx': 4,
               'tx': 3,
               'samples': 256,

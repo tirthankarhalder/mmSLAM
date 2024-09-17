@@ -2,6 +2,16 @@ from helper import *
 import seaborn as sns
 
 
+def pointcloud_openradar(file_name):
+    info_dict = get_info(file_name)
+    run_data_read_only_sensor(info_dict)
+    bin_filename = './datasets/radar_data/only_sensor_' + info_dict['filename'][0]
+    pcd_data = generate_pcd(bin_filename, info_dict)
+    print(pcd_data.shape)
+
+
+
+
 def point_cloud_frames(file_name = None):
     info_dict = get_info(file_name)
     run_data_read_only_sensor(info_dict)
@@ -28,7 +38,8 @@ def point_cloud_frames(file_name = None):
         pcds.append(pointCloud)
     return pcds
         
-gen=point_cloud_frames(file_name ='./datasets/radar_data/drone_2024-09-10_16_12_18_test.bin')
+# gen=point_cloud_frames(file_name ='./datasets/radar_data/drone_2024-09-10_16_12_18_test.bin')
+gen=pointcloud_openradar(file_name ='./datasets/radar_data/drone_2024-09-10_16_12_18_test.bin')
 total_data = []
 total_ids = []
 total_frames=0
