@@ -575,7 +575,7 @@ def frame_reshape(frames, NUM_FRAMES):
 
 
 def generate_pcd(filename, info_dict):
-    NUM_FRAMES = info_dict['Nf'][0]
+    NUM_FRAMES = info_dict[' Nf'][0]
     with open(filename, 'rb') as ADCBinFile: 
         frames = np.frombuffer(ADCBinFile.read(cfg.FRAME_SIZE*4*NUM_FRAMES), dtype=np.uint16)
     all_data = frame_reshape(frames, NUM_FRAMES)

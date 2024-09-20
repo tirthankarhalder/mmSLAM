@@ -9,20 +9,27 @@ from pyemd import emd
 
 
 def compute_confidence_score(input_pcd, gt_pcd):
-    """
-    Compute the ground truth confidence scores for the input point cloud.
-    """
-    # input_pcd: Tensor of shape [32, 1000, 3]
-    # gt_pcd: Tensor of shape [32, N, 3] (ground truth point cloud with N points)
     batch_size, num_points, _ = input_pcd.shape
     _, gt_num_points, _ = gt_pcd.shape
-    input_pcd_exp = input_pcd.unsqueeze(2).repeat(1, 1, gt_num_points, 1)  # Shape [32, 1000, N, 3]
-    gt_pcd_exp = gt_pcd.unsqueeze(1).repeat(1, num_points, 1, 1)  # Shape [32, 1000, N, 3]
-    distances = torch.norm(input_pcd_exp - gt_pcd_exp, dim=-1)  # Shape [32, 1000, N]
-    min_distances, _ = torch.min(distances, dim=-1)  # Shape [32, 1000]
-    ground_truth_scores = torch.exp(-min_distances)  # Shape [32, 1000]
-    return ground_truth_scores.unsqueeze(-1)  # Shape [32, 1000, 1]
+    input_pcd_exp = input_pcd.unsqueeze(2).repeat(1, 1, gt_num_points, 1)  #[32, 1000, N, 3]
+    gt_pcd_exp = gt_pcd.unsqueeze(1).repeat(1, num_points, 1, 1)  #[32, 1000, N, 3]
+    distances = torch.norm(input_pcd_exp - gt_pcd_exp, dim=-1)  #[32, 1000, N]
+    min_distances, _ = torch.min(distances, dim=-1)  #[32, 1000]
+    ground_truth_scores = torch.exp(-min_distances)  #[32, 1000]
+    return ground_truth_scores.unsqueeze(-1)  #[32, 1000, 1]
 
+def pairwise_distances(x, y):
+    x_square = torch.sum(x ** 2, dim=-1, keepdim=True)  #[batch_size, num_points, 1]
+    y_square = torch.sum(y ** 2, dim=-1, keepdim=True).transpose(2, 1)  #[batch_size, 1, num_points]
+    distances = x_square + y_square - 2 * torch.bmm(x, y.transpose(2, 1))  #[batch_size, num_points, num_points]
+    distances = torch.clamp(distances, min=0.0)
+    return torch.sqrt(distances)
+
+def earth_mover_distance(S1, S2):
+    pairwise_dist = pairwise_distances(S1, S2)  # Shape: [batch_size, num_points, num_points]
+    min_distances, _ = torch.min(pairwise_dist, dim=-1)  # Shape: [batch_size, num_points]
+    emd = torch.mean(min_distances, dim=-1)  # Shape: [batch_size]
+    return emd.mean()
 
 class ChamferDistance(torch.nn.Module):
     def __init__(self):
@@ -69,56 +76,51 @@ class EarthMoversDistanceOpend3d(torch.nn.Module):
         pc2 = pc2[0].cpu().detach().numpy()
         diff = np.expand_dims(pc1, axis=1) - np.expand_dims(pc2, axis=0)
         dist_matrix = np.linalg.norm(diff, axis=-1)
-
-    
-        # Uniform weights for source and target points
         source_weights = np.ones(pc1.shape[0]) / pc1.shape[0]
         target_weights = np.ones(pc2.shape[0]) / pc2.shape[0]
-        
-        # Compute EMD
         emd_distance = emd(source_weights.astype('float64'), target_weights.astype('float64'), dist_matrix.astype('float64'))
         return emd_distance
 
-# class EarthMoversDistance(torch.nn.Module):##this has some memory problem
-#     def __init__(self):
-#         super(EarthMoversDistance, self).__init__()
-
-#     def forward(self, pc1, pc2):
-
-#         reshapedpc1 = pc1.reshape(-1,3)
-#         reshapedpc2 = pc2.reshape(-1,3)
-#         pc1 = reshapedpc1.cpu().detach().numpy()
-#         pc2 = reshapedpc2.cpu().detach().numpy()
-
-#         # pc1 = pc1.cpu().detach().numpy()
-#         # pc2 = pc2.cpu().detach().numpy()
-
-#         print(pc1.shape,pc2.shape)
-#         if len(pc1) != len(pc2):
-#             raise ValueError("Point clouds must have the same number of points for EMD computation.")
-#         dists = np.linalg.norm(pc1[:, np.newaxis] - pc2[np.newaxis, :], axis=2)
-#         weights = np.ones(len(pc1)) / len(pc1)
-#         emd_distance = emd(weights, weights, dists)
-#         return torch.tensor(emd_distance, dtype=torch.float32).to(pc1.device)
-
-class EarthMoversDistance(torch.nn.Module):
+class EarthMoversDistance(torch.nn.Module):##this has some memory problem
     def __init__(self):
         super(EarthMoversDistance, self).__init__()
 
     def forward(self, pc1, pc2):
-        batch_size = pc1.shape[0]
-        emd_distances = []
-        for i in range(batch_size):
-            reshapedpc1 = pc1[i].reshape(-1, 3).double().cpu().detach().numpy()
-            reshapedpc2 = pc2[i].reshape(-1, 3).double().cpu().detach().numpy()
-            if len(reshapedpc1) != len(reshapedpc2):
-                raise ValueError("Point clouds must have the same number of points for EMD computation.")
-            dists = np.linalg.norm(reshapedpc1[:, np.newaxis] - reshapedpc2[np.newaxis, :], axis=2)
-            weights = np.ones(len(reshapedpc1)) / len(reshapedpc1)
-            emd_distance = emd(weights, weights, dists)
-            emd_distances.append(torch.tensor(emd_distance, dtype=torch.float32))
-        emd_distances =  torch.stack(emd_distances).float().to(pc1.device)
-        return emd_distances.sum()
+
+        reshapedpc1 = pc1.reshape(-1,3)
+        reshapedpc2 = pc2.reshape(-1,3)
+        pc1 = reshapedpc1.cpu().detach().numpy()
+        pc2 = reshapedpc2.cpu().detach().numpy()
+
+        # pc1 = pc1.cpu().detach().numpy()
+        # pc2 = pc2.cpu().detach().numpy()
+
+        print(pc1.shape,pc2.shape)
+        if len(pc1) != len(pc2):
+            raise ValueError("Point clouds must have the same number of points for EMD computation.")
+        dists = np.linalg.norm(pc1[:, np.newaxis] - pc2[np.newaxis, :], axis=2)
+        weights = np.ones(len(pc1)) / len(pc1)
+        emd_distance = emd(weights, weights, dists)
+        return torch.tensor(emd_distance, dtype=torch.float32).to(pc1.device)
+
+# class EarthMoversDistance(torch.nn.Module):#emd with batch wise operation
+#     def __init__(self):
+#         super(EarthMoversDistance, self).__init__()
+
+#     def forward(self, pc1, pc2):
+#         batch_size = pc1.shape[0]
+#         emd_distances = []
+#         for i in range(batch_size):
+#             reshapedpc1 = pc1[i].reshape(-1, 3).double().cpu().detach().numpy()
+#             reshapedpc2 = pc2[i].reshape(-1, 3).double().cpu().detach().numpy()
+#             if len(reshapedpc1) != len(reshapedpc2):
+#                 raise ValueError("Point clouds must have the same number of points for EMD computation.")
+#             dists = np.linalg.norm(reshapedpc1[:, np.newaxis] - reshapedpc2[np.newaxis, :], axis=2)
+#             weights = np.ones(len(reshapedpc1)) / len(reshapedpc1)
+#             emd_distance = emd(weights, weights, dists)
+#             emd_distances.append(torch.tensor(emd_distance, dtype=torch.float32))
+#         emd_distances =  torch.stack(emd_distances).float().to(pc1.device)
+#         return emd_distances.sum()
 
 
 class CombinedLoss(nn.Module):
@@ -134,9 +136,10 @@ class CombinedLoss(nn.Module):
         cd = self.chamfer(pc1[0], pc2)
         print(pc1[3].shape,pc2.shape)
 
-        emd_dist = self.emd(pc1[0], pc2)
-        print("emd_dist.shape: ",emd_dist.shape)
+        # emd_dist = self.emd(pc1[0], pc2)
+        # print("emd_dist.shape: ",emd_dist.shape)
         # emd_dist, _ = emd_loss(pc1[0], pc2, eps=0.005, max_iters=1000)
+        # emd_dist = pairwise_distances(pc1[0], pc2)
 
         ground_truth_scores = compute_confidence_score(pc3, pc2)  # Output shape: [32, 1000, 1]
 
@@ -144,7 +147,7 @@ class CombinedLoss(nn.Module):
 
         seedGeneratorLoss = self.chamfer(pc1[1],pc2)
 
-        upSamplingBlockLoss = self.alpha * cd + (1 - self.alpha) * emd_dist
+        upSamplingBlockLoss = self.alpha * cd #+ (1 - self.alpha) * emd_dist
 
         finalLoss = confidenseScoreLoss + upSamplingBlockLoss + seedGeneratorLoss
         return finalLoss
