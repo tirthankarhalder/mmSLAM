@@ -38,5 +38,6 @@ HectorSlamX4/
 *.pth
 *.c
 *.h
-data_collect_mmwave_only
+helperDup.py
+tempCodeRunnerFile.py
 
