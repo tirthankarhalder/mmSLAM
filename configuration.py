@@ -21,6 +21,8 @@ NUM_FRAMES = 0
 LOOPS_PER_FRAME = 182 # num of chirp loop, one loop has three chirps
 #PERIODICITY = 100 
 # time for one chirp in ms  100ms == 10FPS
+ANGLE_RES = 1
+ANGLE_RANGE = 90
 NUM_DOPPLER_BINS = LOOPS_PER_FRAME
 NUM_RANGE_BINS = ADC_SAMPLES
 NUM_ANGLE_BINS = 64
@@ -31,3 +33,4 @@ MAX_DOPPLER = 3e8 / (4 * START_FREQ * 1e9 * (IDLE_TIME + RAMP_END_TIME) * 1e-6 *
 
 MMWAVE_RADAR_LOC=np.array([[0.146517, -3.030810, 1.0371905]]) # hard code the location of mmWave radar
 FRAME_SIZE = ADC_SAMPLES*LOOPS_PER_FRAME*NUM_TX*NUM_RX 
+ANGLE_BINS = (ANGLE_RANGE * 2) // ANGLE_RES + 1

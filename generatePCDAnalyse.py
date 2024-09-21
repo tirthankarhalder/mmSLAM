@@ -48,8 +48,8 @@ initial_coordinates = {}
 current_cluster = {}
 points = []
 prev_point = np.array([0,0])
-for pointcloud in gen:
-    print(pointcloud.shape)
-    print(pointcloud)
-    break
+# for pointcloud in gen:
+#     print(pointcloud.shape)
+#     print(pointcloud)
+#     break
     
