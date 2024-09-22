@@ -6,50 +6,44 @@ def pointcloud_openradar(file_name):
     info_dict = get_info(file_name)
     run_data_read_only_sensor(info_dict)
     bin_filename = './datasets/radar_data/only_sensor_' + info_dict['filename'][0]
-    pcd_data = generate_pcd(bin_filename, info_dict)
-    print(pcd_data.shape)
+    pcd_data, time = generate_pcd_time(bin_filename, info_dict)
+    # print(pcd_data.shape)
+    return pcd_data, time
 
+if __name__ == "__main__":
+    # gen=point_cloud_frames(file_name ='./datasets/radar_data/drone_2024-09-10_16_12_18_test.bin')
+    gen, timestamps = pointcloud_openradar(file_name ='./datasets/radar_data/drone_2024-09-10_16_12_18_test.bin')
+    print("timestamps.shape: ",len(timestamps))
+    total_data = []
+    total_ids = []
+    total_frames=0
+    first_frame = True
+    initial_coordinates = {}
+    current_cluster = {}
+    points = []
+    prev_point = np.array([0,0])
+    frameID = 1
+    visualization = False
+    for pointcloud in gen:
+        # print(pointcloud.shape)
+        # print(pointcloud)
+        # break
+        if frameID == 1:
+            print(pointcloud.shape,frameID)
+            points = pointcloud[:,:3]
+            print(points.shape,frameID)
+            if visualization:
+                sns.set(style="whitegrid")
+                fig = plt.figure(figsize=(12,7))
+                ax = fig.add_subplot(111,projection='3d')
+                img = ax.scatter(points[:,0], points[:,1], points[:,2], cmap="jet",marker='o')
+                fig.colorbar(img)
+                ax.set_xlabel('X')
+                ax.set_ylabel('Y')
+                ax.set_zlabel('Z')
 
-
-
-# def point_cloud_frames(file_name = None):
-#     info_dict = get_info(file_name)
-#     run_data_read_only_sensor(info_dict)
-#     bin_filename = './datasets/radar_data/only_sensor_' + info_dict['filename'][0]
-#     bin_reader = RawDataReader(bin_filename)
-#     total_frame_number = int(info_dict[' Nf'][0])
-#     pointCloudProcessCFG = PointCloudProcessCFG()
-#     velocities = []
-#     pcds = []
-#     for frame_no in range(total_frame_number):
-#         bin_frame = bin_reader.getNextFrame(pointCloudProcessCFG.frameConfig)
-#         np_frame = bin2np_frame(bin_frame)
-#         frameConfig = pointCloudProcessCFG.frameConfig
-#         reshapedFrame = frameReshape(np_frame, frameConfig)
-#         rangeResult = rangeFFT(reshapedFrame, frameConfig)
-#         if frame_no == 5:
-#             range_heatmap = np.sum(np.abs(rangeResult), axis=(0,1))
-#             print("range_heatmap.shape: ", range_heatmap.shape)
-#             sns.heatmap(range_heatmap)
-#             plt.savefig('range.png')
-        
-#         dopplerResult = dopplerFFT(rangeResult, frameConfig)
-#         pointCloud = frame2pointcloud(dopplerResult, pointCloudProcessCFG)
-#         pcds.append(pointCloud)
-#     return pcds
-        
-# gen=point_cloud_frames(file_name ='./datasets/radar_data/drone_2024-09-10_16_12_18_test.bin')
-gen=pointcloud_openradar(file_name ='./datasets/radar_data/drone_2024-09-10_16_12_18_test.bin')
-total_data = []
-total_ids = []
-total_frames=0
-first_frame = True
-initial_coordinates = {}
-current_cluster = {}
-points = []
-prev_point = np.array([0,0])
-# for pointcloud in gen:
-#     print(pointcloud.shape)
-#     print(pointcloud)
-#     break
-    
+                plt.savefig("pcd.png")
+                # plt.show()
+                plt.close()
+            break
+        frameID+=1
