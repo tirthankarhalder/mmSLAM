@@ -6,7 +6,7 @@ def pointcloud_openradar(file_name):
     info_dict = get_info(file_name)
     run_data_read_only_sensor(info_dict)
     bin_filename = './datasets/radar_data/only_sensor_' + info_dict['filename'][0]
-    pcd_data, time = generate_pcd_time(bin_filename, info_dict)
+    pcd_data, time = generate_pcd_time(bin_filename, info_dict,fixedPoint=True)
     # print(pcd_data.shape)
     return pcd_data, time
 
@@ -23,7 +23,7 @@ if __name__ == "__main__":
     points = []
     prev_point = np.array([0,0])
     frameID = 1
-    visualization = False
+    visualization = True
     for pointcloud in gen:
         # print(pointcloud.shape)
         # print(pointcloud)
@@ -42,7 +42,7 @@ if __name__ == "__main__":
                 ax.set_ylabel('Y')
                 ax.set_zlabel('Z')
 
-                plt.savefig("pcd.png")
+                plt.savefig("./visualization/radar/OpenRadarFixedPointPCD.png")
                 # plt.show()
                 plt.close()
             break

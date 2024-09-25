@@ -71,6 +71,20 @@ def frame_reshape(frames, NUM_FRAMES):
     all_data = np.apply_along_axis(DCA1000.organize, 1, adc_data, num_chirps=cfg.LOOPS_PER_FRAME*cfg.NUM_TX, num_rx=cfg.NUM_RX, num_samples=cfg.ADC_SAMPLES)
     return all_data
 
+def reg_data(data, pc_size):  #
+    pc_tmp = np.zeros((pc_size, 6), dtype=np.float32)
+    pc_no = data.shape[0]
+    if pc_no < pc_size:
+        fill_list = np.random.choice(pc_size, size=pc_no, replace=False)
+        fill_set = set(fill_list)
+        pc_tmp[fill_list] = data
+        dupl_list = [x for x in range(pc_size) if x not in fill_set]
+        dupl_pc = np.random.choice(pc_no, size=len(dupl_list), replace=True)
+        pc_tmp[dupl_list] = data[dupl_pc]
+    else:
+        pc_list = np.random.choice(pc_no, size=pc_size, replace=False)
+        pc_tmp = data[pc_list]
+    return pc_tmp
 
 def generate_pcd(filename, info_dict):
     NUM_FRAMES = info_dict[' Nf'][0]
@@ -169,7 +183,7 @@ def generate_pcd(filename, info_dict):
 
 
 
-def generate_pcd_time(filename, info_dict):
+def generate_pcd_time(filename, info_dict, fixedPoint = False):
     NUM_FRAMES = info_dict[' Nf'][0]
     with open(filename, 'rb') as ADCBinFile: 
         frames = np.frombuffer(ADCBinFile.read(cfg.FRAME_SIZE*4*NUM_FRAMES), dtype=np.uint16)
@@ -266,5 +280,11 @@ def generate_pcd_time(filename, info_dict):
             frame_pcd[idx,4] = point_cloud.range
             frame_pcd[idx,5] = point_cloud.angle
 
+        if fixedPoint:
+            frame_pcd = reg_data(frame_pcd,1000)
+            
         pcd_datas.append(frame_pcd)
-    return np.array(pcd_datas), time_frames
+
+    pointcloud = np.array(pcd_datas)
+    
+    return pointcloud, time_frames
