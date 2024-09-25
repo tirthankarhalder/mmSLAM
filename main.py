@@ -33,7 +33,7 @@ if __name__ == "__main__":
     filteredCsvFile = [f for f in os.listdir(depthFilePath) if os.path.isfile(os.path.join(depthFilePath, f)) and f.endswith('.csv') and not f.startswith('only_sensor')]
 
     total_framePCD = []
-    total_framePCDDf = pd.DataFrame(columns=["datetime","pcd"])
+    total_frameRadar = pd.DataFrame(columns=["datetime","pcd"])
     for file in filteredBinFile:#interate over all bin and stack
         binFilePath = radarFilePath+file
         gen,timestamps=pointcloud_openradar(file_name =binFilePath)
@@ -62,8 +62,8 @@ if __name__ == "__main__":
         radarCSVDir = radarFilePath + "csv_file/"
         if not os.path.exists(saveCsv):
             os.makedirs(radarCSVDir)
-        total_framePCDDf.append(df)
-        df.to_csv(saveCsv)
+        total_frameRadar.append(df)
+        df.to_csv(saveCsv)#this will crate indivisula csv file fr each bin file
 
     total_frameStacked = np.stack(total_framePCD)
     print("total_frameStacked.shape: ",total_frameStacked.shape)
@@ -78,9 +78,15 @@ if __name__ == "__main__":
     dfs = [pd.read_csv(file) for file in glob.glob(csvFilePath)]
     total_frameDepth = pd.concat(dfs, ignore_index=True)#merger all csv
 
+    for index, row in total_frameDepth.iterrows():
+        for i in range(len(row["x"])):
+            pass
+        #complete tommorrow make frame from x y z
     total_frameDepth['datetime'] = pd.to_datetime(total_frameDepth['datetime'], format='%Y-%m-%d %H:%M:%S.%f')
     total_frameDepth.dropna()
     total_frameDepth.to_csv("total_frameDepth.csv")
+
+
 
     # #check new samples radar data plot with pcd column
     # sns.set(style="whitegrid")
@@ -147,9 +153,14 @@ if __name__ == "__main__":
 
     #totalframePCDDf and total_frameDepth is final merged file 
 
-    mergerdPcdDepth = pd.merge_asof(total_framePCDDf, total_frameDepth, on='datetime',tolerance=pd.Timedelta('2us'), direction='nearest')
+    mergerdPcdDepth = pd.merge_asof(total_frameRadar, total_frameDepth, on='datetime',tolerance=pd.Timedelta('2us'), direction='nearest')
 
     print("mergerdPcdDepth.shape: ",mergerdPcdDepth.shape)
+
+
+    for index,row in mergerdPcdDepth.iterrows():
+        pass
+
 
 
 
