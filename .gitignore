@@ -27,7 +27,7 @@ telemetry_data/
 animations/
 *.gif
 **/*.ipynb
-
+*.ipynb
 *.bin
 *.csv
 fig/
@@ -41,3 +41,4 @@ HectorSlamX4/
 helperDup.py
 tempCodeRunnerFile.py
 
+.vscode
