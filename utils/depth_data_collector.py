@@ -18,7 +18,8 @@ header = [
 
 def collect_depth_data(duration,filename):
     directory_path = os.path.join('./datasets/', 'depth_data')
-    imageDirectory_path = os.path.join('./datasets/', 'image_data/',str(datetime.now()))
+    folName = "_".join(filename.split("_")[1:5])
+    imageDirectory_path = os.path.join('./datasets/', 'image_data/',folName)
     full_path = os.path.join(directory_path, filename)
     print(full_path)
     if not os.path.exists(directory_path):
@@ -76,7 +77,8 @@ def collect_depth_data(duration,filename):
             with open(full_path, "a") as f:
                 writer = csv.DictWriter(f, header)
                 writer.writerow(dict_dumper)
-            images_path = os.path.join(imageDirectory_path,str(datetime.now())+".jpg")
+            images_path = os.path.join(imageDirectory_path,str(datetime.now().strftime('%Y-%m-%d_%H_%M_%S'))+".jpg")
+            print(images_path)
             cv2.imwrite(images_path, color_image)
             index+=1
 
@@ -87,7 +89,8 @@ def collect_depth_data(duration,filename):
 
 
 if __name__ == "__main__":
-    n_frames = 5
-    periodicity = 4400
+    n_frames = 200
+    periodicity = 200
     depth_duration = (int(n_frames)+5)*int(periodicity) / 1000
-    collect_depth_data(duration=depth_duration,filename="depthTest.csv")
+    print(depth_duration)
+    collect_depth_data(duration=depth_duration,filename="drone_2024-09-10_16_12_18_test_depth.csv")
