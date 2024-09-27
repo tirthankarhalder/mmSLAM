@@ -4,7 +4,7 @@ import struct
 import time
 import numpy as np
 import array as arr
-import configuration as cfg
+import utils.configuration as cfg
 from tqdm import tqdm
 from matplotlib.colors import LinearSegmentedColormap
 import matplotlib.pyplot as plt

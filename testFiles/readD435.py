@@ -9,13 +9,13 @@ import time
 header = [
     "datetime",
     "frame_number",
-    "depthPCD",
+    # "depthPCD",
     "x",
     "y",
     "z"
     
 ]
-filename = "depth.csv"  
+filename = "../depth.csv"  
 with open(filename, "w") as f:
     csv.DictWriter(f, fieldnames=header).writeheader()
 # Configure depth and color streams
@@ -58,7 +58,7 @@ try:
         pc = rs.pointcloud()
         points = pc.calculate(depth_frame)
         pc.map_to(color_frame)
-        pcd = [list(tup) for tup in np.asanyarray(points.get_vertices())]
+        # pcd = [list(tup) for tup in np.asanyarray(points.get_vertices())]
         # print(array_of_lists)
         # print(np.asanyarray(points.get_vertices()).tolist())
         # break
@@ -67,14 +67,14 @@ try:
         data = {
             "datetime" : datetime.now(),
             "frame_number": points.get_frame_number(),
-            "depthPCD":pcd,
+            # "depthPCD":pcd,
             "x":list(np.asanyarray(points.get_vertices())['f0']),
             "y":list(np.asanyarray(points.get_vertices())['f1']),
             "z":list(np.asanyarray(points.get_vertices())['f2'])
         }
         
         dict_dumper.update(data)
-        path = "./depth.csv"
+        path = "../depth.csv"
         with open(path, "a") as f:
             writer = csv.DictWriter(f, header)
             writer.writerow(dict_dumper)
