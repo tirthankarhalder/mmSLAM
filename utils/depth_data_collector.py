@@ -56,13 +56,12 @@ def collect_depth_data(duration,filename):
             if not depth_frame or not color_frame:
                 continue
 
-            depth_image = np.asanyarray(depth_frame.get_data())
+            # depth_image = np.asanyarray(depth_frame.get_data())
             color_image = np.asanyarray(color_frame.get_data())
 
             pc = rs.pointcloud()
             points = pc.calculate(depth_frame)
             pc.map_to(color_frame)
-            pcdFrame = [list(tup) for tup in np.asanyarray(points.get_vertices())]
 
             dict_dumper = {'datetime': datetime.now()}
             data = {
@@ -73,11 +72,10 @@ def collect_depth_data(duration,filename):
             }
             
             dict_dumper.update(data)
-            # path = "./depth.csv"
             with open(full_path, "a") as f:
                 writer = csv.DictWriter(f, header)
                 writer.writerow(dict_dumper)
-            images_path = os.path.join(imageDirectory_path,str(datetime.now().strftime('%Y-%m-%d_%H_%M_%S'))+".jpg")
+            images_path = os.path.join(imageDirectory_path,str(datetime.now().strftime('%Y-%m-%d_%H_%M_%S_%f'))+".jpg")
             print(images_path)
             cv2.imwrite(images_path, color_image)
             index+=1
@@ -89,7 +87,7 @@ def collect_depth_data(duration,filename):
 
 
 if __name__ == "__main__":
-    n_frames = 200
+    n_frames = 15
     periodicity = 200
     depth_duration = (int(n_frames)+5)*int(periodicity) / 1000
     print(depth_duration)
