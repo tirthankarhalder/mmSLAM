@@ -76,7 +76,7 @@ def collect_depth_data(duration,filename):
                 writer = csv.DictWriter(f, header)
                 writer.writerow(dict_dumper)
             images_path = os.path.join(imageDirectory_path,str(datetime.now().strftime('%Y-%m-%d_%H_%M_%S_%f'))+".jpg")
-            # print(images_path)
+            print(images_path)
             cv2.imwrite(images_path, color_image)
             index+=1
 
