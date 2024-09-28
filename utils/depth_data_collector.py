@@ -66,9 +66,9 @@ def collect_depth_data(duration,filename):
             dict_dumper = {'datetime': datetime.now()}
             data = {
                 "frame_number": points.get_frame_number(),
-                "x":np.asanyarray(points.get_vertices())['f0'],
-                "y":np.asanyarray(points.get_vertices())['f1'],
-                "z":np.asanyarray(points.get_vertices())['f2']
+                "x":list(np.asanyarray(points.get_vertices())['f0']),
+                "y":list(np.asanyarray(points.get_vertices())['f1']),
+                "z":list(np.asanyarray(points.get_vertices())['f2'])
             }
             
             dict_dumper.update(data)
@@ -76,7 +76,7 @@ def collect_depth_data(duration,filename):
                 writer = csv.DictWriter(f, header)
                 writer.writerow(dict_dumper)
             images_path = os.path.join(imageDirectory_path,str(datetime.now().strftime('%Y-%m-%d_%H_%M_%S_%f'))+".jpg")
-            print(images_path)
+            # print(images_path)
             cv2.imwrite(images_path, color_image)
             index+=1
 
@@ -87,7 +87,7 @@ def collect_depth_data(duration,filename):
 
 
 if __name__ == "__main__":
-    n_frames = 15
+    n_frames = 5
     periodicity = 200
     depth_duration = (int(n_frames)+5)*int(periodicity) / 1000
     print(depth_duration)

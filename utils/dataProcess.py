@@ -37,7 +37,7 @@ def preprocess_ExportData(visualization=False):
         df['datetime'] = pd.to_datetime(df['datetime'], format='%Y-%m-%d %H_%M_%S.%f')
         saveCsv = radarFilePath + "csv_file/" + file.split(".")[0] + ".csv"
         radarCSVDir = radarFilePath + "csv_file/"
-        if not os.path.exists(saveCsv):
+        if not os.path.exists(radarCSVDir):
             os.makedirs(radarCSVDir)
         total_frameRadar.append(df)
         df.to_csv(saveCsv,index=False)#this will crate indivisula csv file fr each bin file
