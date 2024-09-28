@@ -59,7 +59,7 @@ header = ["filename"," Nf","n_chirps","tc","adc_samples","sampling_rate","period
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='parser for params')
-    parser.add_argument('-nf', '--nframes', type=int, default= 20,help='Number of frames')
+    parser.add_argument('-nf', '--nframes', type=int, default= 500,help='Number of frames')
     parser.add_argument('-nc', '--nchirps', type=int, default= 182,help='Number of chirps in a frame, usually 182')
     parser.add_argument('-tc', '--timechirp', type=int, default=72,help='Chrip time is microseconds, usually 72')
     parser.add_argument('-s', '--samples', type=int, default= 256,help='Number of ADC samples, or range bins, usually 256')
@@ -111,6 +111,7 @@ if __name__ == "__main__":
             os.makedirs(radar_directoryPath)
             print("radar_data directory is created")
         image_name = "drone_"+date_string+".jpg"
+        # imageFolderName = os.path.join("./datasets", "image_data" ,date_string)
         c_program_args=[radarFullDirectoryPath,n_frames]
         if(args.camera):
             capture_frame_and_save(image_folder_path, image_name)
@@ -164,6 +165,9 @@ if __name__ == "__main__":
             os.system(f"rm ./datasets/depth_data/{depth_filename}")
             print(f"./datasets/depth_data/{depth_filename} deleted successfully")
             
+            os.system(f"rm -r ./datasets/image_data/{date_string}")
+            print(f"./datasets/image_data/{date_string} deleted successfully")
+
             os.system(f"rm ./datasets/lidar_data/{lidar_filename}")
             print(f"./datasets/lidar_data/{lidar_filename} deleted successfully")
             
