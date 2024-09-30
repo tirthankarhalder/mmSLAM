@@ -103,6 +103,7 @@ if __name__ == "__main__":
         l = str(args.length)
         r0 = str(args.radial)
         descri = args.descp
+        imageFolderName = date_string
         date_string+="_" + descri
         file_name = "drone_"+date_string+".bin"
         radar_directoryPath = "./datasets/radar_data/"
@@ -128,7 +129,7 @@ if __name__ == "__main__":
             print("Starting IMU thread")
         if(args.depth):
             depth_duration = (int(n_frames)+5)*int(periodicity) / 1000; #periodicity is in ms (collect for 5 extra frames)
-            depth_filename = "drone_"+date_string+"_depth.npz"
+            depth_filename = "drone_"+date_string+"_depth.csv"
             depth_thread = threading.Thread(target=collect_depth_data, args=(depth_duration,depth_filename))
             
             depth_thread.start()
@@ -158,18 +159,18 @@ if __name__ == "__main__":
         if(ans_to_keep=='no'):
             os.system(f"rm {radarFullDirectoryPath}")
             print(f"{radarFullDirectoryPath} deleted successfully")
-
-            os.system(f"rm ./datasets/imu_data/{imu_filename}")
-            print(f"./datasets/imu_data/{imu_filename} deleted successfully")
-
-            os.system(f"rm ./datasets/depth_data/{depth_filename}")
-            print(f"./datasets/depth_data/{depth_filename} deleted successfully")
+            if(args.imu):
+                os.system(f"rm ./datasets/imu_data/{imu_filename}")
+                print(f"./datasets/imu_data/{imu_filename} deleted successfully")
+            if(args.depth):
+                os.system(f"rm ./datasets/depth_data/{depth_filename}")
+                print(f"./datasets/depth_data/{depth_filename} deleted successfully")
             
-            os.system(f"rm -r ./datasets/image_data/{date_string}")
-            print(f"./datasets/image_data/{date_string} deleted successfully")
-
-            os.system(f"rm ./datasets/lidar_data/{lidar_filename}")
-            print(f"./datasets/lidar_data/{lidar_filename} deleted successfully")
+                os.system(f"rm -r ./datasets/image_data/{date_string}")
+                print(f"./datasets/image_data/{imageFolderName} deleted successfully")
+            if(args.lidar):
+                os.system(f"rm ./datasets/lidar_data/{lidar_filename}")
+                print(f"./datasets/lidar_data/{lidar_filename} deleted successfully")
             
             sys.exit()
 
