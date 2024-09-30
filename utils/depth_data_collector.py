@@ -8,6 +8,7 @@ import pyrealsense2 as rs
 import numpy as np
 from datetime import datetime
 import pickle
+import h5py
 # header = [
 #         "datetime",
 #         "frame_number",
@@ -97,8 +98,17 @@ def collect_depth_data(duration,filename):
     finally:
         # np.savez('arrays.npz', **arrays, times = timestamp)
         # np.savez('timestamps.npz', **timestamp)
-        with open(filename, 'wb') as f:
-            pickle.dump((rawPoints, timestamp), f)
+        # with open(filename, 'wb') as f:
+        #     pickle.dump((rawPoints, timestamp), f)
+        chunk_size = 30
+        with open(full_path, 'wb') as f:
+            for i in range(0, len(timestamp), chunk_size):
+                pointChunk = rawPoints[i:i+chunk_size]  # Create a chunk of data
+                timeChunk = timestamp[i:i+chunk_size]  # Create a chunk of data
+                pickle.dump((pointChunk,timeChunk), f)
+        # with h5py.File(full_path, 'w') as f:
+        #     f.create_dataset('point', data=pointData)
+        #     f.create_dataset('time', data=timestamp)
         # Stop streaming
         pipeline.stop()
         time.sleep(0.02)
