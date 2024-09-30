@@ -17,7 +17,24 @@ import h5py
 #         "z"
         
 #     ]
-
+def save_dict_to_pickle_in_chunks(large_dict, chunk_size, filename):
+    # Open the file in append-binary mode
+    with open(filename, 'ab') as f:
+        for key, large_array in large_dict.items():
+            # Calculate the number of chunks for this particular array
+            num_chunks = len(large_array) // chunk_size + (1 if len(large_array) % chunk_size != 0 else 0)
+            
+            for i in range(num_chunks):
+                # Get the chunk from the array
+                chunk = large_array[i * chunk_size : (i + 1) * chunk_size]
+                
+                # Create a small dictionary with the current key and chunk
+                chunk_dict = {key: chunk}
+                
+                # Dump the chunk to the pickle file
+                pickle.dump(chunk_dict, f)
+                
+                print(f"Saved chunk {i + 1}/{num_chunks} of key '{key}'.")
 def collect_depth_data(duration,filename):
     directory_path = os.path.join('./datasets/', 'depth_data')
     folName = "_".join(filename.split("_")[1:5])
@@ -102,9 +119,12 @@ def collect_depth_data(duration,filename):
         #     pickle.dump((rawPoints, timestamp), f)
         chunk_size = 30
         with open(full_path, 'wb') as f:
-            for i in range(0, len(timestamp), chunk_size):
-                pointChunk = rawPoints[i:i+chunk_size]  # Create a chunk of data
-                timeChunk = timestamp[i:i+chunk_size]  # Create a chunk of data
+            pointList = list(rawPoints.items())
+            timeList = list(timestamp.items())
+            for i in range(0, len(timeList), chunk_size):
+                # print(rawPoints)
+                pointChunk = dict(pointList[i:i+chunk_size])  # Create a chunk of data
+                timeChunk = dict(timeList[i:i+chunk_size]) # Create a chunk of data
                 pickle.dump((pointChunk,timeChunk), f)
         # with h5py.File(full_path, 'w') as f:
         #     f.create_dataset('point', data=pointData)
@@ -115,8 +135,8 @@ def collect_depth_data(duration,filename):
 
 
 if __name__ == "__main__":
-    n_frames = 5
+    n_frames = 500
     periodicity = 200
     depth_duration = (int(n_frames)+5)*int(periodicity) / 1000
     print(depth_duration)
-    collect_depth_data(duration=depth_duration,filename="drone_2024-09-10_16_12_18_test_depth.csv")
+    collect_depth_data(duration=depth_duration,filename="drone_2024-09-10_16_12_18_test_depth.pkl")
