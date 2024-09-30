@@ -50,21 +50,23 @@ def collect_data(duration, filename,csvfilename):
             data_to_store = struct.pack('d' * 7, timestamp, *imu_data)
                 
             file.write(data_to_store)
-            #csv
-            dict_dumper = {'datetime': datetime.now()}
-            data = {
-                "ax":mpu.acceleration[0],
-                "ay":mpu.acceleration[1],
-                "az":mpu.acceleration[2],
-                "gx":mpu.gyro[0],
-                "gy":mpu.gyro[1],
-                "gz":mpu.gyro[2]
-            }
+
+            #csv file save
+            # dict_dumper = {'datetime': datetime.now()}
+            # data = {
+            #     "ax":mpu.acceleration[0],
+            #     "ay":mpu.acceleration[1],
+            #     "az":mpu.acceleration[2],
+            #     "gx":mpu.gyro[0],
+            #     "gy":mpu.gyro[1],
+            #     "gz":mpu.gyro[2]
+            # }
             
-            dict_dumper.update(data)
-            with open(csvFilePath, "a") as f:
-                writer = csv.DictWriter(f, header)
-                writer.writerow(dict_dumper)   
+            # dict_dumper.update(data)
+            # with open(csvFilePath, "a") as f:
+            #     writer = csv.DictWriter(f, header)
+            #     writer.writerow(dict_dumper)
+
             # Schedule the next collection in 0.02 seconds
             #threading.Timer(0.02, collect_and_store).start()
             time.sleep(0.02)

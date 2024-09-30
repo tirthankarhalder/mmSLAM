@@ -7,14 +7,15 @@ import cv2
 import pyrealsense2 as rs
 import numpy as np
 from datetime import datetime
-header = [
-        "datetime",
-        "frame_number",
-        "x",
-        "y",
-        "z"
+import pickle
+# header = [
+#         "datetime",
+#         "frame_number",
+#         "x",
+#         "y",
+#         "z"
         
-    ]
+#     ]
 
 def collect_depth_data(duration,filename):
     directory_path = os.path.join('./datasets/', 'depth_data')
@@ -31,8 +32,8 @@ def collect_depth_data(duration,filename):
     if os.path.exists(full_path):
         os.remove(full_path)
         print(f"File {full_path} already existed. Overwriting...")
-    with open(full_path, "w") as f:
-        csv.DictWriter(f, fieldnames=header).writeheader()
+    # with open(full_path, "w") as f:
+    #     csv.DictWriter(f, fieldnames=header).writeheader()
     pipeline = rs.pipeline()
     config = rs.config()
     config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
@@ -43,6 +44,8 @@ def collect_depth_data(duration,filename):
 
     try:
         index = 0
+        rawPoints = {}
+        timestamp = {}
         end_time = time.time() + duration
         # while(True):
         while(time.time() < end_time):
@@ -62,25 +65,40 @@ def collect_depth_data(duration,filename):
             pc = rs.pointcloud()
             points = pc.calculate(depth_frame)
             pc.map_to(color_frame)
+            pointData = np.asanyarray(points.get_vertices())
 
-            dict_dumper = {'datetime': datetime.now()}
-            data = {
-                "frame_number": points.get_frame_number(),
-                "x":list(np.asanyarray(points.get_vertices())['f0']),
-                "y":list(np.asanyarray(points.get_vertices())['f1']),
-                "z":list(np.asanyarray(points.get_vertices())['f2'])
-            }
+            # print((type(pointData)))
+            # break
+            print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            rawPoints[f"{index}"] = pointData
+            timestamp[f"{index}"] = datetime.now().strftime("%Y-%m-%d %H.%M.%S.%f")
             
-            dict_dumper.update(data)
-            with open(full_path, "a") as f:
-                writer = csv.DictWriter(f, header)
-                writer.writerow(dict_dumper)
+            # dict_dumper = {'datetime': datetime.now()}
+            # data = {
+            #     "frame_number": points.get_frame_number(),
+            #     "x":pointData,
+            #     "y":pointData['f1'],
+            #     "z":pointData['f2']
+            # }
+            # df.loc[len(df)] = [array1[0], array2[0], array3[0]]  # Get the first element of each array
+
+            # dict_dumper.update(data)
+            # with open(full_path, "a") as f:
+            #     writer = csv.DictWriter(f, header)
+            #     writer.writerow(dict_dumper)
+
+
             images_path = os.path.join(imageDirectory_path,str(datetime.now().strftime('%Y-%m-%d_%H_%M_%S_%f'))+".jpg")
-            # print(images_path)
+            print(images_path)
             cv2.imwrite(images_path, color_image)
             index+=1
+        
 
     finally:
+        # np.savez('arrays.npz', **arrays, times = timestamp)
+        # np.savez('timestamps.npz', **timestamp)
+        with open(filename, 'wb') as f:
+            pickle.dump((rawPoints, timestamp), f)
         # Stop streaming
         pipeline.stop()
         time.sleep(0.02)

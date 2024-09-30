@@ -30,6 +30,8 @@ animations/
 *.ipynb
 *.bin
 *.csv
+*.dat
+*.pkl
 fig/
 dataX4/
 dataRadar/
