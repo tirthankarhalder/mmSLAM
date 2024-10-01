@@ -31,8 +31,8 @@ def collect_data(duration, filename,csvfilename):
     if os.path.exists(full_path):
         os.remove(full_path)
         print(f"File {full_path} already existed. Overwriting...")
-    with open(csvFilePath, "w") as f:
-        csv.DictWriter(f, fieldnames=header).writeheader()
+    # with open(csvFilePath, "w") as f:
+    #     csv.DictWriter(f, fieldnames=header).writeheader()
 
     with open(full_path, 'wb') as file:
         end_time = time.time() + duration

@@ -129,7 +129,7 @@ if __name__ == "__main__":
             print("Starting IMU thread")
         if(args.depth):
             depth_duration = (int(n_frames)+5)*int(periodicity) / 1000; #periodicity is in ms (collect for 5 extra frames)
-            depth_filename = "drone_"+date_string+"_depth.csv"
+            depth_filename = "drone_"+date_string+"_depth.pkl"
             depth_thread = threading.Thread(target=collect_depth_data, args=(depth_duration,depth_filename))
             
             depth_thread.start()

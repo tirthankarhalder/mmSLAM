@@ -87,7 +87,7 @@ def collect_depth_data(duration,filename):
 
             # print((type(pointData)))
             # break
-            print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            # print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             rawPoints[f"{index}"] = pointData
             timestamp[f"{index}"] = datetime.now().strftime("%Y-%m-%d %H.%M.%S.%f")
             
@@ -107,7 +107,7 @@ def collect_depth_data(duration,filename):
 
 
             images_path = os.path.join(imageDirectory_path,str(datetime.now().strftime('%Y-%m-%d_%H_%M_%S_%f'))+".jpg")
-            print(images_path)
+            # print(images_path)
             cv2.imwrite(images_path, color_image)
             index+=1
         
@@ -117,12 +117,13 @@ def collect_depth_data(duration,filename):
         # np.savez('timestamps.npz', **timestamp)
         # with open(filename, 'wb') as f:
         #     pickle.dump((rawPoints, timestamp), f)
-        chunk_size = 30
+        chunk_size = 5
+        print("Inside Finally")
         with open(full_path, 'wb') as f:
             pointList = list(rawPoints.items())
             timeList = list(timestamp.items())
             for i in range(0, len(timeList), chunk_size):
-                # print(rawPoints)
+                print(i)
                 pointChunk = dict(pointList[i:i+chunk_size])  # Create a chunk of data
                 timeChunk = dict(timeList[i:i+chunk_size]) # Create a chunk of data
                 pickle.dump((pointChunk,timeChunk), f)
