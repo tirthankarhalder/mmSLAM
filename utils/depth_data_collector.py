@@ -9,6 +9,7 @@ import numpy as np
 from datetime import datetime
 import pickle
 import h5py
+import queue
 # header = [
 #         "datetime",
 #         "frame_number",
@@ -17,24 +18,31 @@ import h5py
 #         "z"
         
 #     ]
-def save_dict_to_pickle_in_chunks(large_dict, chunk_size, filename):
-    # Open the file in append-binary mode
-    with open(filename, 'ab') as f:
-        for key, large_array in large_dict.items():
-            # Calculate the number of chunks for this particular array
-            num_chunks = len(large_array) // chunk_size + (1 if len(large_array) % chunk_size != 0 else 0)
-            
-            for i in range(num_chunks):
-                # Get the chunk from the array
-                chunk = large_array[i * chunk_size : (i + 1) * chunk_size]
-                
-                # Create a small dictionary with the current key and chunk
-                chunk_dict = {key: chunk}
-                
-                # Dump the chunk to the pickle file
-                pickle.dump(chunk_dict, f)
-                
-                print(f"Saved chunk {i + 1}/{num_chunks} of key '{key}'.")
+
+buffer_size = 2
+buffer = queue.Queue(maxsize=buffer_size)
+lock = threading.Lock()
+
+def dump_to_pickle(path):
+    with lock:
+        arrays = []
+        while not buffer.empty():
+            arrays.append(buffer.get())
+        with open(path, 'ab') as f:  # Append mode
+            pickle.dump(arrays, f)
+            print(f"Dumped {len(arrays)} arrays to {path}")
+
+# Function to add data to buffer
+def add_to_buffer(path, data):
+    with lock:
+        buffer.put(data)
+        if buffer.full():
+            print(path)
+            dump_thread = threading.Thread(target=dump_to_pickle, args=(path,))
+            dump_thread.start()
+
+
+
 def collect_depth_data(duration,filename):
     directory_path = os.path.join('./datasets/', 'depth_data')
     folName = "_".join(filename.split("_")[1:5])
@@ -65,8 +73,8 @@ def collect_depth_data(duration,filename):
         rawPoints = {}
         timestamp = {}
         end_time = time.time() + duration
-        # while(True):
-        while(time.time() < end_time):
+        while(True):
+        # while(time.time() < end_time):
             frames = pipeline.wait_for_frames()
             
             aligned_frames = align.process(frames)
@@ -88,8 +96,8 @@ def collect_depth_data(duration,filename):
             # print((type(pointData)))
             # break
             # print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-            rawPoints[f"{index}"] = pointData
-            timestamp[f"{index}"] = datetime.now().strftime("%Y-%m-%d %H.%M.%S.%f")
+            # rawPoints[f"{index}"] = pointData
+            # timestamp[f"{index}"] = datetime.now().strftime("%Y-%m-%d %H.%M.%S.%f")
             
             # dict_dumper = {'datetime': datetime.now()}
             # data = {
@@ -110,23 +118,30 @@ def collect_depth_data(duration,filename):
             # print(images_path)
             cv2.imwrite(images_path, color_image)
             index+=1
-        
+
+            add_to_buffer(full_path,pointData)
+
+        if not buffer.empty():
+            dump_thread = threading.Thread(target=dump_to_pickle, args=full_path)
+            dump_thread.start()
+            dump_thread.join()
+
 
     finally:
         # np.savez('arrays.npz', **arrays, times = timestamp)
         # np.savez('timestamps.npz', **timestamp)
         # with open(filename, 'wb') as f:
         #     pickle.dump((rawPoints, timestamp), f)
-        chunk_size = 5
-        print("Inside Finally")
-        with open(full_path, 'wb') as f:
-            pointList = list(rawPoints.items())
-            timeList = list(timestamp.items())
-            for i in range(0, len(timeList), chunk_size):
-                print(i)
-                pointChunk = dict(pointList[i:i+chunk_size])  # Create a chunk of data
-                timeChunk = dict(timeList[i:i+chunk_size]) # Create a chunk of data
-                pickle.dump((pointChunk,timeChunk), f)
+        # chunk_size = 5
+        # print("Inside Finally")
+        # with open(full_path, 'wb') as f:
+        #     pointList = list(rawPoints.items())
+        #     timeList = list(timestamp.items())
+        #     for i in range(0, len(timeList), chunk_size):
+        #         print(i)
+        #         pointChunk = dict(pointList[i:i+chunk_size])  # Create a chunk of data
+        #         timeChunk = dict(timeList[i:i+chunk_size]) # Create a chunk of data
+        #         pickle.dump((pointChunk,timeChunk), f)
         # with h5py.File(full_path, 'w') as f:
         #     f.create_dataset('point', data=pointData)
         #     f.create_dataset('time', data=timestamp)
