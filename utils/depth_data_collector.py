@@ -11,9 +11,10 @@ import pickle
 import h5py
 import queue
 
-buffer_size = 5
+buffer_size = 50
 buffer = queue.Queue(maxsize=buffer_size)
 lock = threading.Lock()
+
 '''
     pklObjects->stack of all buffer
     buffer->stack of all frames
@@ -34,7 +35,6 @@ def dump_to_pickle(depthFilePth):
             pickle.dump(arrays, f)
             print(f"Dumped {len(arrays)} arrays to {depthFilePth}")
 
-# Function to add data to buffer
 def add_to_buffer(path, buffereDepthData):
     with lock:
         buffer.put(buffereDepthData)
@@ -91,7 +91,6 @@ def collect_depth_data(duration,filename):
             pc.map_to(color_frame)
             pointData = np.asanyarray(points.get_vertices())
             images_path = os.path.join(imageDirectory_path,str(datetime.now().strftime('%Y-%m-%d_%H_%M_%S_%f'))+".jpg")
-            # print(images_path)
             cv2.imwrite(images_path, color_image)
             index+=1
             combinedPointcloudTime = [pointData,datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")]

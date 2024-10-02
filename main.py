@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
 
 
-    # batch_size = 32
+    batch_size = 32
 
 
     # tensorDataset = PointCloudDataset(total_frameStacked)
