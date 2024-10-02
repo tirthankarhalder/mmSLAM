@@ -20,9 +20,9 @@ def preprocess_ExportData(visualization=False):
     radarFilePath = os.path.join(datasetsFolderPath,"radar_data/")
     depthFilePath = os.path.join(datasetsFolderPath,"depth_data/")
     filteredBinFile = [f for f in os.listdir(radarFilePath) if os.path.isfile(os.path.join(radarFilePath, f)) and f.endswith('.bin') and not f.startswith('only_sensor')]
-    filteredNpzFile = [f for f in os.listdir(depthFilePath) if os.path.isfile(os.path.join(depthFilePath, f)) and f.endswith('.npz') and not f.startswith('only_sensor')]
+    filteredPKLFile = [f for f in os.listdir(depthFilePath) if os.path.isfile(os.path.join(depthFilePath, f)) and f.endswith('.pkl') and not f.startswith('only_sensor')]
 
-    if len(filteredBinFile) != len(filteredNpzFile):
+    if len(filteredBinFile) != len(filteredPKLFile):
         return None
     print("List of CSV and BIN file matched")
     # else: check all bin and csv file same
@@ -64,20 +64,33 @@ def preprocess_ExportData(visualization=False):
     total_frameDepth = pd.DataFrame(columns=["datetime","depthPCD"])
     totalDepthFrame = []
     totalDepthFrameTimestamps = []
-    for file in filteredNpzFile:
+    for file in filteredPKLFile:
+        # depthPCDObjects = []
+        frameFile = []
         # npPointcloud = np.load(depthFilePath +file,allow_pickle=True)
-        with open(file, 'rb') as f:
-            pointcloud, timestamp = pickle.load(f)
-        for i in range(len(pointcloud)):
+        with open(depthFilePath+file, 'rb') as f:
+            # pointcloud, timestamp = pickle.load(f)
+            while True:
+                try:
+                    depthObj = pickle.load(f)
+                    frameFile+=depthObj
+                    # depthPCDObjects.append(depthObj)
+                except EOFError: 
+                    break
+                except Exception as e:
+                    print(f"Error reading file: {e}")
+        
+            
+        for i in range(len(frameFile)):
             frame = []
-            x = pointcloud[str(i)]['f0']
-            y = pointcloud[str(i)]['f1']
-            z = pointcloud[str(i)]['f2']
-            time = timestamp[str(i)]
-            for j in range(len(x)):
-                frame.append(np.array([x[i],y[i],z[i]]))
-            totalDepthFrame.append(frame)
-            totalDepthFrameTimestamps.append(time)
+            x = frameFile[i][0]['f0']
+            y = frameFile[i][0]['f1']
+            z = frameFile[i][0]['f2']
+            # time = frameFile[str(i)][1]
+            # for j in range(len(x)):
+            #     frame.append(np.array([x[i],y[i],z[i]]))
+            totalDepthFrame.append(frameFile[i][0])
+            totalDepthFrameTimestamps.append(frameFile[i][1])
             # break
 
 

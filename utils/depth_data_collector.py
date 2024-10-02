@@ -15,12 +15,13 @@ buffer_size = 5
 buffer = queue.Queue(maxsize=buffer_size)
 lock = threading.Lock()
 '''
-    pklObjects->stack of all frames
+    pklObjects->stack of all buffer
+    buffer->stack of all frames
     frames->stack of poincloud,timestamp
     frame[0]->poincloud of 3 channel
     type(frame[0])-> dtype=[('f0', '<f4'), ('f1', '<f4'), ('f2', '<f4')])
     frame[1]->timestamp
-    
+
 
 '''
 
@@ -93,7 +94,7 @@ def collect_depth_data(duration,filename):
             # print(images_path)
             cv2.imwrite(images_path, color_image)
             index+=1
-            combinedPointcloudTime = [pointData,datetime.now().strftime("%Y-%m-%d %H.%M.%S.%f")]
+            combinedPointcloudTime = [pointData,datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")]
             add_to_buffer(full_path,combinedPointcloudTime)
 
         if not buffer.empty():
