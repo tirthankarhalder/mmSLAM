@@ -14,10 +14,12 @@ from model.dataloader import PointCloudDataset
 from model.upSamplingBlock import UpSamplingBlock
 from model.customLossFunction import CombinedLoss
 
-
+startProcessingForNewData = True
 if __name__ == "__main__":
 
-    preprocess_ExportData(visualization=True)
+
+    if startProcessingForNewData:
+        pointcloudRadarDepth = preprocess_ExportData(visualization=False)
 
 
 

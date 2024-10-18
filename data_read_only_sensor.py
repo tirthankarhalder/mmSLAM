@@ -8,8 +8,8 @@ FRAMES = 50
 dca_name = sys.argv[1]
 n_frames = int(sys.argv[2])
 
-# dca_name = "./datasets/radar_data/drone_2024-09-10_16_12_18_test.bin"
-# n_frames = 20
+# dca_name = "./datasets/radar_data/drone_2024-10-02_20_27_14_test.bin"
+# n_frames = 1000
 
 annotated_fname = dca_name.split("/")[0]+"/" +dca_name.split("/")[1] + "/" + dca_name.split("/")[2] + "/only_sensor_"+dca_name.split("/")[3]
 FRAMES = n_frames+1
@@ -133,10 +133,15 @@ def annotate(dca_array,frames):
 
 
 def annotate_time_stamp(dca_time_array,frames):
-    annotated_fname = "./datasets/time_stamps/time_"+dca_name.split("/")[3]
-    if os.path.exists(annotated_fname):
+    annotated_fnameDir = "./datasets/time_stamps/"
+    annotation_fileName = "time_"+dca_name.split("/")[3]
+    annotation_fileFullPath = annotated_fnameDir + annotation_fileName
+    if not os.path.exists(annotated_fnameDir):
+        os.makedirs(annotated_fnameDir)
+        print("time_stamps directory is created")
+    if os.path.exists(annotation_fileFullPath):
         os.remove(annotated_fname)
-    annotation_file = open(annotated_fname, "ab")
+    annotation_file = open(annotation_fileFullPath, "ab")
     for i in range (frames):
         annotation_file.write(dca_time_array[i])
     annotation_file.close()
@@ -145,6 +150,6 @@ def annotate_time_stamp(dca_time_array,frames):
 
 dca_array,dca_time_array=read_and_print_dca_file(dca_name,1466)
 annotate(dca_array,FRAMES)
-annotate_time_stamp(dca_time_array, FRAMES)
+# annotate_time_stamp(dca_time_array, FRAMES)
 # print(dca_array.shape)cols), dtype=np.uint16)
     

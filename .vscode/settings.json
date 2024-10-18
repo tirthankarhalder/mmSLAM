@@ -2,5 +2,8 @@
     "files.associations": {
         "chrono": "c"
     },
-    "cmake.ignoreCMakeListsMissing": true
+    "cmake.ignoreCMakeListsMissing": true,
+    "cSpell.enableFiletypes": [
+        "!python"
+    ]
 }
