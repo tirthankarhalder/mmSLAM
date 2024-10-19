@@ -5,47 +5,13 @@ import seaborn as sns
 import concurrent.futures
 from utils.helper import *
 import gc
-import time
-
 def pointcloud_openradar(file_name):
-    print(f"{file_name} initialized")
     info_dict = get_info(file_name)
     run_data_read_only_sensor(info_dict)
     bin_filename = './datasets/radar_data/only_sensor_' + info_dict['filename'][0]
     pcd_data, time = generate_pcd_time(bin_filename, info_dict,fixedPoint=True)
     # print(pcd_data.shape)
     return pcd_data, time
-
-# def process_frames_in_chunks(frameSPerFile, file, chunk_size=100):
-#     """Process frames in chunks to optimize memory usage."""
-#     total_depth_frame = []
-#     total_depth_timestamps = []
-
-#     # Process in chunks
-#     for start in range(0, len(frameSPerFile), chunk_size):
-#         end = min(start + chunk_size, len(frameSPerFile))
-#         chunk = frameSPerFile[start:end]
-
-#         # Parallelize processing of frames in this chunk
-#         with concurrent.futures.ProcessPoolExecutor() as frame_executor:
-#             results = list(frame_executor.map(
-#                 lambda i: process_single_frame(chunk[i], i + start, file),
-#                 range(len(chunk))
-#             ))
-
-#         # Unpack the processed frames and timestamps
-#         file_depth_frame, file_depth_frame_timestamps = zip(*results)
-        
-#         # Append processed data to the main list (or save it to disk)
-#         total_depth_frame.extend(file_depth_frame)
-#         total_depth_timestamps.extend(file_depth_frame_timestamps)
-
-#         # Release memory after each chunk
-#         del chunk
-#         del results
-#         gc.collect()  # Force garbage collection
-
-#     return total_depth_frame, total_depth_timestamps
 
 def process_frames(frameSPerFile, file):
     """Process frames in a single file and return depth frames and timestamps."""
@@ -60,7 +26,7 @@ def process_frames(frameSPerFile, file):
         print(f"Frame initialized: {i} {file}")
 
         # for pointIndex in range(len(x)):
-            # frame.append(np.array([x[pointIndex], y[pointIndex], z[pointIndex]]))
+        #     frame.append(np.array([x[pointIndex], y[pointIndex], z[pointIndex]]))
         frame = np.array([x, y, z]).T
 
         fileDepthFrame.append(frame)
@@ -122,6 +88,37 @@ def save_partial_results(fileDepthFrame, fileDepthFrameTimestamps, file):
         pickle.dump((fileDepthFrame, fileDepthFrameTimestamps), f)
 
 
+# def process_frames_in_chunks(frameSPerFile, file, chunk_size=100):
+#     """Process frames in chunks to optimize memory usage."""
+#     total_depth_frame = []
+#     total_depth_timestamps = []
+
+#     # Process in chunks
+#     for start in range(0, len(frameSPerFile), chunk_size):
+#         end = min(start + chunk_size, len(frameSPerFile))
+#         chunk = frameSPerFile[start:end]
+
+#         # Parallelize processing of frames in this chunk
+#         with concurrent.futures.ProcessPoolExecutor() as frame_executor:
+#             results = list(frame_executor.map(
+#                 lambda i: process_single_frame(chunk[i], i + start, file),
+#                 range(len(chunk))
+#             ))
+
+#         # Unpack the processed frames and timestamps
+#         file_depth_frame, file_depth_frame_timestamps = zip(*results)
+        
+#         # Append processed data to the main list (or save it to disk)
+#         total_depth_frame.extend(file_depth_frame)
+#         total_depth_timestamps.extend(file_depth_frame_timestamps)
+
+#         # Release memory after each chunk
+#         del chunk
+#         del results
+#         gc.collect()  # Force garbage collection
+
+#     return total_depth_frame, total_depth_timestamps
+
 def preprocess_ExportData(visualization=False):                
     datasetsFolderPath = './datasets/'
     radarFilePath = os.path.join(datasetsFolderPath,"radar_data/")
@@ -141,16 +138,17 @@ def preprocess_ExportData(visualization=False):
     #radar part
     total_framePCD = []
     total_frameRadarDF = pd.DataFrame(columns=["datetime","radarPCD"])
-    with concurrent.futures.ProcessPoolExecutor(max_workers= 3) as executor:
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers= 5) as executor:
         results = list(executor.map(process_bin_file, filteredBinFile, [radarFilePath] * len(filteredBinFile)))
 
     for df in results:
-        total_frameRadarDF = pd.concat([total_frameRadarDF, df], ignore_index=True)#total_frameRadarDF.append(df, ignore_index=True)
+        total_frameRadarDF = total_frameRadarDF.append(df, ignore_index=True)
 
     print("BIN file Processing completed.")
 
     # total_frameStackedRadar = np.stack(total_frameRadarDF["radarPCD"])
-    
+    print("total_frameStackedRadar.shape: ",np.stack(total_frameRadarDF["radarPCD"]).shape)
 
 
     #camera part
@@ -158,61 +156,42 @@ def preprocess_ExportData(visualization=False):
     totalDepthFrame = []
     totalDepthFrameTimestamps = []
 
-    # # Parallel processing of all PKL files
-    # with concurrent.futures.ProcessPoolExecutor(max_workers=2) as file_executor:
-    #     for file, result in zip(filteredPKLFile, file_executor.map(load_and_process_file, filteredPKLFile)):
-    #         fileDepthFrame, fileDepthFrameTimestamps = result
-    #         save_partial_results(fileDepthFrame, fileDepthFrameTimestamps, file)
-    #         del fileDepthFrame, fileDepthFrameTimestamps
-    #         gc.collect() 
+    # Parallel processing of all PKL files
+    with concurrent.futures.ProcessPoolExecutor(max_workers=2) as file_executor:
+        # Read and process all files in parallel
+        for file, result in zip(filteredPKLFile, file_executor.map(load_and_process_file, filteredPKLFile)):
+            fileDepthFrame, fileDepthFrameTimestamps = result
+
+            # Save the processed frames and timestamps incrementally
+            save_partial_results(fileDepthFrame, fileDepthFrameTimestamps, file)
+            
+            # Clear memory for the next file
+            del fileDepthFrame, fileDepthFrameTimestamps
+            gc.collect()  # Force garbage collection to free memory
 
             
-    with concurrent.futures.ProcessPoolExecutor(max_workers=3) as file_executor:
-        results = list(file_executor.map(load_and_process_file, filteredPKLFile))
-    for fileDepthFrame, fileDepthFrameTimestamps in results:
-        totalDepthFrame += fileDepthFrame
-        totalDepthFrameTimestamps += fileDepthFrameTimestamps
+    # with concurrent.futures.ThreadPoolExecutor(max_workers=2) as file_executor:
+    #     results = list(file_executor.map(load_and_process_file, filteredPKLFile))
+    # for fileDepthFrame, fileDepthFrameTimestamps in results:
+    #     totalDepthFrame += fileDepthFrame
+    #     totalDepthFrameTimestamps += fileDepthFrameTimestamps
 
     print("Processing completed.")
 
     total_frameDepth["depthPCD"] = totalDepthFrame
-    total_frameDepth["datetime"] = totalDepthFrameTimestamps
+    # total_frameDepth["datetime"] = totalDepthFrameTimestamps
     del totalDepthFrame 
     total_frameDepth['datetime'] = pd.to_datetime(total_frameDepth['datetime'], format='%Y-%m-%d %H:%M:%S.%f')
     total_frameDepth.dropna()
-    total_frameDepth.to_csv("total_frameDepth.csv",index=False)
+    # total_frameDepth.to_csv("total_frameDepth.csv",index=False)
     del totalDepthFrameTimestamps 
 
-    print("total_frameStackedRadar.shape: ",np.stack(total_frameRadarDF["radarPCD"]).shape)
     # total_frameStackedDepth = np.stack(total_frameDepth["depthPCD"])
     print("total_frameStackedDepth.shape: ",np.stack(total_frameDepth["depthPCD"]).shape)
 
-    # mergerdPcdDepth = pd.merge_asof(total_frameRadarDF, total_frameDepth, on='datetime',tolerance=pd.Timedelta('600ms'), direction='nearest')
-    # print("mergerdPcdDepth.shape: ",mergerdPcdDepth.shape)
+    mergerdPcdDepth = pd.merge_asof(total_frameRadarDF, total_frameDepth, on='datetime',tolerance=pd.Timedelta('2us'), direction='nearest')
+    print("mergerdPcdDepth.shape: ",mergerdPcdDepth.shape)
 
-    ########################################################################
-    mergerdPcdDepth = pd.merge_asof(total_frameRadarDF, total_frameDepth, on='datetime',tolerance=pd.Timedelta('200ms'), direction='nearest')
-    print("mergerdPcdDepth.shape: ",mergerdPcdDepth.shape)
-    mergerdPcdDepth =mergerdPcdDepth.dropna(subset=['depthPCD'])
-    print("200ms - mergerdPcdDepth after dropna.shape: ",mergerdPcdDepth.shape)
-    mergerdPcdDepth = pd.merge_asof(total_frameRadarDF, total_frameDepth, on='datetime',tolerance=pd.Timedelta('400ms'), direction='nearest')
-    print("mergerdPcdDepth.shape: ",mergerdPcdDepth.shape)
-    mergerdPcdDepth =mergerdPcdDepth.dropna(subset=['depthPCD'])
-    print("400ms - mergerdPcdDepth after dropna.shape: ",mergerdPcdDepth.shape)
-    mergerdPcdDepth = pd.merge_asof(total_frameRadarDF, total_frameDepth, on='datetime',tolerance=pd.Timedelta('600ms'), direction='nearest')
-    print("mergerdPcdDepth.shape: ",mergerdPcdDepth.shape)
-    mergerdPcdDepth =mergerdPcdDepth.dropna(subset=['depthPCD'])
-    print("600ms - mergerdPcdDepth after dropna.shape: ",mergerdPcdDepth.shape)
-    mergerdPcdDepth = pd.merge_asof(total_frameRadarDF, total_frameDepth, on='datetime',tolerance=pd.Timedelta('800ms'), direction='nearest')
-    print("mergerdPcdDepth.shape: ",mergerdPcdDepth.shape)
-    mergerdPcdDepth = mergerdPcdDepth.dropna(subset=['depthPCD'])
-    print("800ms - mergerdPcdDepth after dropna.shape: ",mergerdPcdDepth.shape)
-    mergerdPcdDepth = pd.merge_asof(total_frameRadarDF, total_frameDepth, on='datetime',tolerance=pd.Timedelta('1000ms'), direction='nearest')
-    print("mergerdPcdDepth.shape: ",mergerdPcdDepth.shape)
-    mergerdPcdDepth = mergerdPcdDepth.dropna(subset=['depthPCD'])
-    print("1000ms - mergerdPcdDepth after dropna.shape: ",mergerdPcdDepth.shape)
-
-    ####################################################################################
     mergerdPcdDepth.to_csv("mergedRadarDepth.dat", sep = ' ', index=False)
     print("mergedRadarDepth.dat Exported")
 
@@ -224,8 +203,8 @@ def preprocess_ExportData(visualization=False):
     total_frameRadarDF.to_pickle("./total_frameRadarDF.pkl")
     print("total_frameRadarDF.pkl Exported")
 
-    total_frameDepth.to_pickle("./total_frameDepth.pkl")
-    print("total_frameDepth.pkl Exported")
+    # total_frameDepth.to_pickle("./total_frameDepth.pkl")
+    # print("total_frameDepth.pkl Exported")
 
 
     print("Data Processing Done")
