@@ -1,9 +1,0 @@
-{
-    "files.associations": {
-        "chrono": "c"
-    },
-    "cmake.ignoreCMakeListsMissing": true,
-    "cSpell.enableFiletypes": [
-        "!python"
-    ]
-}
