@@ -132,6 +132,11 @@ class CombinedLoss(nn.Module):
         self.alpha = alpha
 
     def forward(self, pc1, pc2, pc3):
+        '''
+            pc1-> referecne to model weights
+            pc2-> ground truth pcd
+            pc3->radarpcd
+        '''
 
         cd = self.chamfer(pc1[0], pc2)
         print(pc1[3].shape,pc2.shape)
