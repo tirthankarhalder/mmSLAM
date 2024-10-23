@@ -95,7 +95,7 @@ class EarthMoversDistance(torch.nn.Module):##this has some memory problem
         # pc1 = pc1.cpu().detach().numpy()
         # pc2 = pc2.cpu().detach().numpy()
 
-        print(pc1.shape,pc2.shape)
+        # print(pc1.shape,pc2.shape)
         if len(pc1) != len(pc2):
             raise ValueError("Point clouds must have the same number of points for EMD computation.")
         dists = np.linalg.norm(pc1[:, np.newaxis] - pc2[np.newaxis, :], axis=2)
@@ -139,7 +139,7 @@ class CombinedLoss(nn.Module):
         '''
 
         cd = self.chamfer(pc1[0], pc2)
-        print(pc1[3].shape,pc2.shape)
+        # print(pc1[3].shape,pc2.shape)
 
         # emd_dist = self.emd(pc1[0], pc2)
         # print("emd_dist.shape: ",emd_dist.shape)

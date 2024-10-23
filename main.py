@@ -41,10 +41,10 @@ if __name__ == "__main__":
     
 
     tensorDataset = PointCloudDataset(total_frameStackedRadar)
-    dataloader = DataLoader(tensorDataset, batch_size=batch_size, shuffle=True)
+    dataloader = DataLoader(tensorDataset, batch_size=batch_size, shuffle=False)
 
     tensorDatasetGroundTruth = PointCloudDataset(total_frameStackedDepth)
-    dataloaderGrounfTruth = DataLoader(tensorDataset, batch_size=batch_size, shuffle=True)
+    dataloaderGrounfTruth = DataLoader(tensorDataset, batch_size=batch_size, shuffle=False)
 
 
 

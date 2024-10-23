@@ -51,40 +51,40 @@ class SeedGenerator(nn.Module):
     def forward(self, x):
         noiseAwareFF = NoideAwareFeatureExtractor().to(x.device)
         noiseAwareFFWeights,confidenseScoreWeights = noiseAwareFF(x)
-        print("==============================")
-        print("noiseAwareFFWeights.shape",noiseAwareFFWeights.shape)
+        # print("==============================")
+        # print("noiseAwareFFWeights.shape",noiseAwareFFWeights.shape)
 
         layer_repeat = noiseAwareFFWeights.unsqueeze(1).repeat(1,1,1)
-        print("layer_repeat.shape: ",layer_repeat.shape)
+        # print("layer_repeat.shape: ",layer_repeat.shape)
 
         layer1 = self.upCon(layer_repeat)
-        print("layer1.shape",layer1.shape)
+        # print("layer1.shape",layer1.shape)
 
         layer1_upsampled = F.interpolate(layer1.permute(0, 2, 1), size=(1000), mode='linear', align_corners=False).permute(0, 2, 1)
-        print("layer1_upsampled.shape: ", layer1_upsampled.shape)
+        # print("layer1_upsampled.shape: ", layer1_upsampled.shape)
 
         layer_repeat2 = noiseAwareFFWeights.unsqueeze(1).repeat(1,1000,1)
-        print("layer_repeat2.shape: ", layer_repeat2.shape)
+        # print("layer_repeat2.shape: ", layer_repeat2.shape)
 
         concat_layer1 = torch.cat((layer1_upsampled,layer_repeat2),dim=2)
-        print("concat_layer1.shape: ", concat_layer1.shape)
+        # print("concat_layer1.shape: ", concat_layer1.shape)
 
         layer2 = self.mlp1(concat_layer1)
-        print("layer2.shape: ", layer2.shape)
+        # print("layer2.shape: ", layer2.shape)
         layer3 = self.mlp2(layer2)
-        print("layer3.shape: ", layer3.shape)
+        # print("layer3.shape: ", layer3.shape)
 
         concat_layer2 = torch.cat((layer3,layer_repeat2),dim=2)
-        print("concat_layer2.shape: ", concat_layer2.shape)
+        # print("concat_layer2.shape: ", concat_layer2.shape)
 
         layer4 = self.mlp3(concat_layer2)
-        print("layer4.shape: ",layer4.shape)
+        # print("layer4.shape: ",layer4.shape)
         layer5 = self.mlp4(layer4)
-        print("layer5.shape: ",layer5.shape)
+        # print("layer5.shape: ",layer5.shape)
         layer6 = self.mlp5(layer5)
-        print("layer6.shape: ",layer6.shape)
+        # print("layer6.shape: ",layer6.shape)
         output = self.mlp6(layer6)
-        print("output.shape: ",output.shape)
+        # print("output.shape: ",output.shape)
         return output,noiseAwareFFWeights,confidenseScoreWeights
 
 if __name__ == "__main__":
