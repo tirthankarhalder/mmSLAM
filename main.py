@@ -14,11 +14,49 @@ from model.dataloader import PointCloudDataset
 from model.upSamplingBlock import UpSamplingBlock
 from model.customLossFunction import CombinedLoss
 from sklearn.model_selection import train_test_split
+import open3d as o3d
 
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
+def density_based_downsampling(pcd, target_num_points,voxelSize):
+    """
+    Perform density-based downsampling using voxel grid filtering.
+
+    Args:
+        pcd (open3d.geometry.PointCloud): Input point cloud.
+        voxel_size (float): Size of the voxel grid. Smaller size means higher resolution.
+    
+    Returns:
+        downsampled_pcd (open3d.geometry.PointCloud): Downsampled point cloud.
+    """
+     # Step 1: Estimate the diagonal length of the bounding box for the point cloud
+    bbox_min = pcd.get_min_bound()
+    bbox_max = pcd.get_max_bound()
+    diagonal_length = np.linalg.norm(bbox_max - bbox_min)  # Calculate the length of the diagonal
+
+    # Step 2: Calculate the downsampling ratio and estimate a scalar voxel size
+    num_original_points = np.asarray(pcd.points).shape[0]
+    ratio = num_original_points / target_num_points
+    voxel_size = diagonal_length / (ratio ** (1/3)) 
+    print("Voxel size:",  voxel_size)
+    # Step 2: Perform voxel grid downsampling
+    downsampled_pcd = pcd.voxel_down_sample(voxel_size=voxel_size*0.001)
+    
+    # Step 3: Check if we have more points than required (voxel grid downsampling might give slightly more)
+    num_downsampled_points = len(downsampled_pcd.points)
+    
+    if num_downsampled_points > target_num_points:
+        # Randomly select 'target_num_points' from the downsampled point cloud
+        indices = np.random.choice(num_downsampled_points, target_num_points, replace=False)
+        downsampled_pcd = downsampled_pcd.select_by_index(indices)
+    return downsampled_pcd
 
 startProcessingForNewData = False
+randomDownSample = False
+doDownSampling = False
+visulization = False
+target_num_points = 3000
+
 if __name__ == "__main__":
 
 
@@ -31,62 +69,79 @@ if __name__ == "__main__":
 
     pointcloudRadarDepth.reset_index(drop=True, inplace=True)
 
+    if doDownSampling:
 
-    pointcloudRadarDepth["sampleDepth"] = None
-    downsample_size = 2000  # Specify the desired downsampled size
-    # downsampled_pcd = np.empty((pointcloudRadarDepth.shape[0], downsample_size, 3))
-    for index,row in pointcloudRadarDepth.iterrows():
-        # print(index)
-        indices = np.random.choice(307200, downsample_size, replace=False)  # Random indices
-        # pointcloudRadarDepth.loc[index, "sampleDepth"] = pointcloudRadarDepth["depthPCD"].iloc[index][indices].tolist()  # Select points using the random indices
-        pointcloudRadarDepth.at[index, "sampleDepth"] = pointcloudRadarDepth["depthPCD"].iloc[index][indices]
+        pointcloudRadarDepth["sampleDepth"] = None
+        if randomDownSample:
+            downsample_size = 2000  # Specify the desired downsampled size
+            # downsampled_pcd = np.empty((pointcloudRadarDepth.shape[0], downsample_size, 3))
+            for index,row in pointcloudRadarDepth.iterrows():
+                # print(index)
+                indices = np.random.choice(307200, downsample_size, replace=False)  # Random indices
+                # pointcloudRadarDepth.loc[index, "sampleDepth"] = pointcloudRadarDepth["depthPCD"].iloc[index][indices].tolist()  # Select points using the random indices
+                pointcloudRadarDepth.at[index, "sampleDepth"] = pointcloudRadarDepth["depthPCD"].iloc[index][indices]
+        else:
+            downsampled_frames = []
+            for index,row in pointcloudRadarDepth.iterrows():
+                pcd = o3d.geometry.PointCloud()
+                print(index)
+                voxel_size = 0.05  # Adjust voxel size for desired resolution
+                pcd.points = o3d.utility.Vector3dVector(pointcloudRadarDepth["depthPCD"][index])
+                #density based downsampling
+                
 
+                downsampled_pcd = density_based_downsampling(pcd, target_num_points,voxelSize=0.05)
+                downsampled_points = np.asarray(downsampled_pcd.points)
+                print("downsampled_points.shape",downsampled_points.shape)
+                pointcloudRadarDepth.at[index, "sampleDepth"] = downsampled_points
+        pointcloudRadarDepth.to_pickle("./pointcloudRadarDepth.pkl")
+        print("Down Samling Done, pointcloudRadarDepth.pkl Exported")
+    else:
+        pointcloudRadarDepth = pd.read_pickle("./pointcloudRadarDepth.pkl")
+        print("Existing Down Sampling file importeds")
+    if visulization :
+        for index,row in pointcloudRadarDepth.iterrows():
+            frameIDX = np.random.randint(0, pointcloudRadarDepth.shape[0])
+            distancesRadar = np.linalg.norm(pointcloudRadarDepth["radarPCD"][frameIDX], axis=1)
+            normalized_distances = (distancesRadar - distancesRadar.min()) / (distancesRadar.max() - distancesRadar.min())
+            sns.set(style="whitegrid")
+            fig = plt.figure(figsize=(12,6))
+            ax1 = fig.add_subplot(131,projection='3d')
+            distancesRadar = np.linalg.norm(pointcloudRadarDepth["radarPCD"][frameIDX], axis=1)
+            normalized_distancesRadar = (distancesRadar - distancesRadar.min()) / (distancesRadar.max() - distancesRadar.min())
+            img1 = ax1.scatter(pointcloudRadarDepth["radarPCD"][frameIDX][:, 0], pointcloudRadarDepth["radarPCD"][frameIDX][:, 1], pointcloudRadarDepth["radarPCD"][frameIDX][:, 2], c=normalized_distancesRadar,cmap = 'viridis', marker='o')
+            fig.colorbar(img1)
+            ax1.set_title('Radar PCD')
+            ax1.set_xlabel('X')
+            ax1.set_ylabel('Y')
+            ax1.set_zlabel('Z')
 
+            ax2 = fig.add_subplot(132,projection='3d')
+            distancesDepth = np.linalg.norm(pointcloudRadarDepth["depthPCD"][frameIDX], axis=1)
+            normalized_distancesDepth = (distancesDepth - distancesDepth.min()) / (distancesDepth.max() - distancesDepth.min())
+            img2 = ax2.scatter(pointcloudRadarDepth["depthPCD"][frameIDX][:, 0], pointcloudRadarDepth["depthPCD"][frameIDX][:, 1], pointcloudRadarDepth["depthPCD"][frameIDX][:, 2], c=normalized_distancesDepth, cmap = 'viridis',marker='o')
+            fig.colorbar(img2)
+            ax2.set_title('Depth Camera PCD')
+            ax2.set_xlabel('X')
+            ax2.set_ylabel('Y')
+            ax2.set_zlabel('Z')
 
-    # pointcloudRadarDepth["sampleDepth"]
-    for index,row in pointcloudRadarDepth.iterrows():
-        distancesRadar = np.linalg.norm(pointcloudRadarDepth["radarPCD"][index], axis=1)
-        normalized_distances = (distancesRadar - distancesRadar.min()) / (distancesRadar.max() - distancesRadar.min())
-        sns.set(style="whitegrid")
-        fig = plt.figure(figsize=(12,6))
-        ax1 = fig.add_subplot(131,projection='3d')
-        distancesRadar = np.linalg.norm(pointcloudRadarDepth["radarPCD"][index], axis=1)
-        normalized_distancesRadar = (distancesRadar - distancesRadar.min()) / (distancesRadar.max() - distancesRadar.min())
-        img1 = ax1.scatter(pointcloudRadarDepth["radarPCD"][index][:, 0], pointcloudRadarDepth["radarPCD"][index][:, 1], pointcloudRadarDepth["radarPCD"][index][:, 2], c=normalized_distancesRadar,cmap = 'viridis', marker='o')
-        fig.colorbar(img1)
-        ax1.set_title('Point Cloud 1')
-        ax1.set_xlabel('X')
-        ax1.set_ylabel('Y')
-        ax1.set_zlabel('Z')
-
-        ax2 = fig.add_subplot(132,projection='3d')
-        distancesDepth = np.linalg.norm(pointcloudRadarDepth["depthPCD"][index], axis=1)
-        normalized_distancesDepth = (distancesDepth - distancesDepth.min()) / (distancesDepth.max() - distancesDepth.min())
-        img2 = ax2.scatter(pointcloudRadarDepth["depthPCD"][index][:, 0], pointcloudRadarDepth["depthPCD"][index][:, 1], pointcloudRadarDepth["depthPCD"][index][:, 2], c=normalized_distancesDepth, cmap = 'viridis',marker='o')
-        fig.colorbar(img2)
-        ax2.set_title('Point Cloud 2')
-        ax2.set_xlabel('X')
-        ax2.set_ylabel('Y')
-        ax2.set_zlabel('Z')
-
-        ax3 = fig.add_subplot(133,projection='3d')
-        distancesSampleDepth = np.linalg.norm(pointcloudRadarDepth["sampleDepth"][index], axis=1)
-        normalized_distancesSampleDepth = (distancesSampleDepth - distancesSampleDepth.min()) / (distancesSampleDepth.max() - distancesSampleDepth.min())
-        img3 = ax3.scatter(pointcloudRadarDepth["sampleDepth"][index][:, 0], pointcloudRadarDepth["sampleDepth"][index][:, 1], pointcloudRadarDepth["sampleDepth"][index][:, 2], c=normalized_distancesSampleDepth, cmap = 'viridis',marker='o')
-        fig.colorbar(img3)
-        ax3.set_title('Point Cloud 3')
-        ax3.set_xlabel('X')
-        ax3.set_ylabel('Y')
-        ax3.set_zlabel('Z')
-
-
-        plt.tight_layout()
-        plt.savefig("./visualization/RadarDepth/radarDepth_"+ str(index)+".png")
-        # plt.show()
-        plt.close()
-        if index ==3:
-            break
-    print("Sample Visulization Saved")
+            ax3 = fig.add_subplot(133,projection='3d')
+            distancesSampleDepth = np.linalg.norm(pointcloudRadarDepth["sampleDepth"][frameIDX], axis=1)
+            normalized_distancesSampleDepth = (distancesSampleDepth - distancesSampleDepth.min()) / (distancesSampleDepth.max() - distancesSampleDepth.min())
+            img3 = ax3.scatter(pointcloudRadarDepth["sampleDepth"][frameIDX][:, 0], pointcloudRadarDepth["sampleDepth"][frameIDX][:, 1], pointcloudRadarDepth["sampleDepth"][frameIDX][:, 2], c=normalized_distancesSampleDepth, cmap = 'viridis',marker='o')
+            fig.colorbar(img3)
+            ax3.set_title('DownSampled Depth PCD')
+            ax3.set_xlabel('X')
+            ax3.set_ylabel('Y')
+            ax3.set_zlabel('Z')
+            plt.tight_layout()
+            plt.savefig(f"./visualization/RadarDepth/radarDepth_{target_num_points}_{str(frameIDX)}.png")
+            # plt.show()
+            plt.close()
+            if index ==3:
+                break
+        print("Sample Visulization Saved")
     # total_frameStackedRadar = np.random.rand(1000, 1000, 3)
     # total_frameStackedDepth = np.random.rand(1000, 307200, 3)
 
@@ -156,11 +211,13 @@ if __name__ == "__main__":
             
             optimizer.step()
 
-            running_loss += loss.item()
+            # running_loss += loss.item()
             print(f'Epoch [{epoch+1}/{epochs}], Batch [{batch_idx+1}/{len(train_dataset_radar)}], Loss: {running_loss / 10:.4f}')
             if batch_idx % 10 == 9:  
                 print(f'Epoch [{epoch+1}/{epochs}], Batch [{batch_idx+1}/{len(train_dataset_radar)}], Loss: {running_loss / 10:.4f}')
                 running_loss = 0.0
+            # break
+        # break
     
     # Plotting Loss
     plt.figure(figsize=(10, 5))
