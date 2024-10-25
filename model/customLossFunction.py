@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import numpy as np
 from scipy.spatial import cKDTree
-# from pyemd import emd
 # from pytorch3d.loss import emd_loss
 from scipy.spatial import cKDTree
 from pyemd import emd
@@ -161,6 +160,7 @@ class EarthMoversDistanceBatchWise(torch.nn.Module):#emd with batch wise operati
         batch_size = pc1.shape[0]
         emd_distances = []
         for i in range(batch_size):
+            print(i)
             reshapedpc1 = pc1[i].reshape(-1, 3).double().cpu().detach().numpy()
             reshapedpc2 = pc2[i].reshape(-1, 3).double().cpu().detach().numpy()
             if len(reshapedpc1) != len(reshapedpc2):
@@ -191,10 +191,10 @@ class CombinedLoss(nn.Module):
         cd = self.chamfer(pc1[0], pc2)
         # print(pc1[3].shape,pc2.shape)
 
-        emd_dist = self.emd(pc1[0], pc2)
-        print("emd_dist.shape: ",emd_dist.shape)
-        # emd_dist, _ = emd_loss(pc1[0], pc2, eps=0.005, max_iters=1000)
-        emd_dist = pairwise_distances(pc1[0], pc2)
+        # emd_dist = self.emd(pc1[0], pc2)
+        # print("emd_dist.shape: ",emd_dist.shape)
+        # # emd_dist, _ = emd_loss(pc1[0], pc2, eps=0.005, max_iters=1000)
+        # emd_dist = pairwise_distances(pc1[0], pc2)
 
         ground_truth_scores = compute_confidence_score(pc3, pc2)  # Output shape: [32, 1000, 1]
 
@@ -202,7 +202,7 @@ class CombinedLoss(nn.Module):
 
         seedGeneratorLoss = self.chamfer(pc1[1],pc2)
 
-        upSamplingBlockLoss = self.alpha * cd + (1 - self.alpha) * emd_dist
+        upSamplingBlockLoss = self.alpha * cd #+ (1 - self.alpha) * emd_dist
 
         finalLoss = confidenseScoreLoss + upSamplingBlockLoss + seedGeneratorLoss
         return finalLoss

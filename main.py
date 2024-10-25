@@ -18,6 +18,23 @@ import open3d as o3d
 
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
+
+checkpoint_dir = "./checkpoints"
+os.makedirs(checkpoint_dir, exist_ok=True)
+
+def save_checkpoint(model, optimizer, epoch, path):
+    checkpoint = {
+        'epoch': epoch,
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict()
+    }
+    torch.save(checkpoint, path)
+    print(f"Checkpoint saved at epoch {epoch + 1}")
+def load_checkpoint(model, optimizer, path):
+    checkpoint = torch.load(path)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    return checkpoint['epoch']
 def density_based_downsampling(pcd, target_num_points,voxelSize):
     """
     Perform density-based downsampling using voxel grid filtering.
@@ -189,7 +206,8 @@ if __name__ == "__main__":
 
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     criterion = CombinedLoss(alpha=0.5).to(device)
-    epochs = 100
+    epochs = 1000
+    total_loss = 0.0
     train_losses = []
     val_losses = []
     train_accuracies = []
@@ -197,28 +215,39 @@ if __name__ == "__main__":
 
     for epoch in range(epochs):
         running_loss = 0.0
+        model.train()
         for batch_idx, (point_cloud_batch,point_cloud_batchGroundTruth) in enumerate(zip(train_loader_radar,train_loader_depth)):
             print(f"Batch {batch_idx+1}:")
-            if batch_idx==1:
+            if batch_idx==0:
                 print(f"Shape of point cloud batch: {point_cloud_batch.shape}")  #(32, 1000, 3)
                 print(f"Shape of point point_cloud_batchGroundTruth: {point_cloud_batchGroundTruth.shape}")  #(32, 1000, 3)
             point_cloud_batch,point_cloud_batchGroundTruth = point_cloud_batch.to(device),point_cloud_batchGroundTruth.to(device)
             optimizer.zero_grad()
-
             UpSamplingBlockWeights,seedGenWwights,noiseAwareFFWeights,confidenseScoreWeights = model(point_cloud_batch)
             loss = criterion([UpSamplingBlockWeights,seedGenWwights,noiseAwareFFWeights,confidenseScoreWeights], point_cloud_batchGroundTruth, point_cloud_batch)#groundTruth (10000,10000,3)
             loss.backward()
-            
             optimizer.step()
-
-            # running_loss += loss.item()
+            running_loss += loss.item()
+            total_loss+=running_loss
             print(f'Epoch [{epoch+1}/{epochs}], Batch [{batch_idx+1}/{len(train_dataset_radar)}], Loss: {running_loss / 10:.4f}')
-            if batch_idx % 10 == 9:  
-                print(f'Epoch [{epoch+1}/{epochs}], Batch [{batch_idx+1}/{len(train_dataset_radar)}], Loss: {running_loss / 10:.4f}')
-                running_loss = 0.0
-            # break
-        # break
-    
+            # if batch_idx % 10 == 9:  
+            #     print(f'Epoch [{epoch+1}/{epochs}], Batch [{batch_idx+1}/{len(train_dataset_radar)}], Loss: {running_loss / 10:.4f}')
+            #     running_loss = 0.0
+        checkpoint_path = f"{checkpoint_dir}/model_epoch_{epoch + 1}.pth"
+        save_checkpoint(model, optimizer, epoch, checkpoint_path)
+        model.eval()  
+        val_loss = 0.0
+        with torch.no_grad():
+            for val_idx, (val_point_cloud, val_point_cloudGT) in enumerate(zip(val_loader_radar, val_loader_depth)):
+                val_point_cloud, val_point_cloudGT = val_point_cloud.to(device), val_point_cloudGT.to(device)
+                outputs = model(val_point_cloud)
+                loss = criterion(outputs, val_point_cloudGT, val_point_cloud)
+                val_loss += loss.item()
+            
+            avg_val_loss = val_loss / len(val_loader_radar)
+            print(f"Epoch [{epoch + 1}/{epochs}] Evaluation Loss: {avg_val_loss:.4f}")
+        train_losses.append(total_loss)
+        val_losses.append(avg_val_loss)
     # Plotting Loss
     plt.figure(figsize=(10, 5))
     plt.plot(train_losses, label='Train Loss')
@@ -228,15 +257,15 @@ if __name__ == "__main__":
     plt.title('Training and Validation Loss over Epochs')
     plt.legend()
     # plt.show()
-    plt.savefig("./Training and Validation Loss over Epochs.png")
+    plt.savefig("./visualization/Training and Validation Loss over Epochs.png")
 
-    # Plotting Accuracy
-    plt.figure(figsize=(10, 5))
-    plt.plot(train_accuracies, label='Train Accuracy')
-    plt.plot(val_accuracies, label='Validation Accuracy')
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy')
-    plt.title('Training and Validation Accuracy over Epochs')
-    plt.legend()
-    # plt.show()
-    plt.savefig("./Training and Validation Accuracy over Epochs.png")
+    # # Plotting Accuracy
+    # plt.figure(figsize=(10, 5))
+    # plt.plot(train_accuracies, label='Train Accuracy')
+    # plt.plot(val_accuracies, label='Validation Accuracy')
+    # plt.xlabel('Epochs')
+    # plt.ylabel('Accuracy')
+    # plt.title('Training and Validation Accuracy over Epochs')
+    # plt.legend()
+    # # plt.show()
+    # plt.savefig("./Training and Validation Accuracy over Epochs.png")
