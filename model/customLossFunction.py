@@ -189,6 +189,7 @@ class CombinedLoss(nn.Module):
         '''
 
         cd = self.chamfer(pc1[0], pc2)
+        
         # print(pc1[3].shape,pc2.shape)
 
         # emd_dist = self.emd(pc1[0], pc2)

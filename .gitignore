@@ -37,6 +37,7 @@ dataX4/
 dataRadar/
 datasets/
 HectorSlamX4/
+checkpoints
 *.pth
 *.c
 *.h
