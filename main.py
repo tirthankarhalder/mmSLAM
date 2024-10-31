@@ -9,6 +9,8 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
+from torch.optim.lr_scheduler import StepLR
+
 import numpy as np
 from model.dataloader import PointCloudDataset
 from model.upSamplingBlock import UpSamplingBlock
@@ -30,16 +32,16 @@ def save_checkpoint(model, optimizer, epoch,trainLoss,valLoss, path):
         'optimizer_state_dict': optimizer.state_dict()
     }
     torch.save(checkpoint, f"{path}/model_epoch_{epoch+1}.pth")
-    np.save(f"{path}/lossCheckpoint/TrainingLoss.pkl",trainLoss)
-    np.save(f"{path}/lossCheckpoint/ValidationLoss.pkl",valLoss)
+    np.save(f"{path}/lossCheckpoint/TrainingLoss.npy",trainLoss)
+    np.save(f"{path}/lossCheckpoint/ValidationLoss.npy",valLoss)
     print(f"Checkpoint saved at epoch {epoch + 1}")
 
 def load_checkpoint(model, optimizer, path):
-    checkpoint = torch.load(f"{path}/model_epoch_{len(model_saves)}.pth")
+    checkpoint = torch.load(f"{path}/model_epoch_{len(model_saves)-1}.pth")
     model.load_state_dict(checkpoint['model_state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    trainLoss = np.load(f"{path}/lossCheckpoint/TrainingLoss.pkl").tolist()
-    valLoss = np.load(f"{path}/lossCheckpoint/ValidationLoss.pkl").tolist()
+    trainLoss = np.load(f"{path}/lossCheckpoint/TrainingLoss.npy").tolist()
+    valLoss = np.load(f"{path}/lossCheckpoint/ValidationLoss.npy").tolist()
     return checkpoint['epoch'],trainLoss,valLoss
 
 def density_based_downsampling(pcd, target_num_points,voxelSize):
@@ -212,22 +214,38 @@ if __name__ == "__main__":
     model = UpSamplingBlock().to(device)
     # model = nn.DataParallel(model, device_ids=[0, 1]).cuda()
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
-    criterion = CombinedLoss(alpha=0.5).to(device)
-    epochs = 250
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+    scheduler = StepLR(optimizer, step_size=100, gamma=0.5)
+    criterion = CombinedLoss(alpha=1,beta=0.5).to(device)
+    epochs = 1000
     avg_loss = 0.0
     train_losses = []
     val_losses = []
     train_accuracies = []
     val_accuracies = []
 
-    train_from_beg=True
+    train_from_beg=True#make it false if want to start where it ended
     start_epoch=0
-    
+
     model_saves=glob.glob(f'{checkpoint_dir}/*')
     if len(model_saves)>0 and not train_from_beg:
         start_epoch,train_losses,val_losses=load_checkpoint(model, optimizer, checkpoint_dir)
         print("Starting from epoch: ", start_epoch)
+
+    else:
+        pth_files = glob.glob(os.path.join(checkpoint_dir, "*.pth"))
+        confirm = input(f"Do you want to delete existing {len(pth_files)} files in {checkpoint_dir}? (y/n): ").strip().lower()
+        if confirm == 'y':
+            for file_path in pth_files:
+                try:
+                    os.remove(file_path)
+                    print(f"Deleted: {file_path}")
+                except Exception as e:
+                    print(f"Error deleting {file_path}: {e}")
+        else:
+            print(f"Skipped: {checkpoint_dir}")
+
+        print("All .pth files deleted.")
 
     for epoch in range(start_epoch,epochs):
         running_loss = []
@@ -265,6 +283,8 @@ if __name__ == "__main__":
         val_losses.append(avg_val_loss)
 
         save_checkpoint(model, optimizer, epoch,train_losses,val_losses, checkpoint_dir)
+        scheduler.step()
+        print(f"Learning Rate for epoch {epoch+1}: {scheduler.get_last_lr()[0]:.6f}")
         e = time.time()
     total_time = e-s
     print(f"Total time taken for training: {total_time/3600}")
