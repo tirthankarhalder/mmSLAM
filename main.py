@@ -80,7 +80,7 @@ def density_based_downsampling(pcd, target_num_points,voxelSize):
 startProcessingForNewData = False
 randomDownSample = False
 doDownSampling = False
-visulization = True
+visulization = False
 target_num_points = 3000
 
 if __name__ == "__main__":
@@ -179,8 +179,8 @@ if __name__ == "__main__":
 
 
     batch_size = 32
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
-    # device = torch.device("cpu")   
+    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
+    device = torch.device("cpu")   
     train_radar, temp_radar, train_depth, temp_depth = train_test_split(total_frameStackedRadar, total_frameStackedDepth, test_size=0.3, random_state=42)
     val_radar, test_radar, val_depth, test_depth = train_test_split(temp_radar, temp_depth, test_size=0.5, random_state=42)  # 15% test, 15% validation
 
@@ -263,7 +263,8 @@ if __name__ == "__main__":
             optimizer.step()
             running_loss.append(loss.item())
             print(f'Epoch [{epoch+1}/{epochs}], Batch [{batch_idx+1}/{math.ceil(len(train_dataset_radar)/batch_size)}], batch Loss: {loss.item():.4f}')
-
+            # break
+        # break
         avg_loss=np.mean(running_loss)
         model.eval()  
         val_loss = []
@@ -286,8 +287,8 @@ if __name__ == "__main__":
         scheduler.step()
         print(f"Learning Rate for epoch {epoch+1}: {scheduler.get_last_lr()[0]:.6f}")
         e = time.time()
-    total_time = e-s
-    print(f"Total time taken for training: {total_time/3600}")
+    # total_time = e-s
+    # print(f"Total time taken for training: {total_time/3600}")
     # Plotting Loss
     plt.figure(figsize=(10, 5))
     plt.plot(train_losses, label='Train Loss')

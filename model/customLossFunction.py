@@ -7,9 +7,6 @@ from scipy.spatial import cKDTree
 from pyemd import emd
 from scipy.optimize import linear_sum_assignment
 
-# from concurrent.futures import ThreadPoolExecutor, as_completed
-
-
 def compute_confidence_score(input_pcd, gt_pcd):
     batch_size, num_points, _ = input_pcd.shape
     _, gt_num_points, _ = gt_pcd.shape
@@ -50,54 +47,6 @@ def earth_movers_distance(source, target):
     emd_distance = emd(source_weights, target_weights, dist_matrix)
 
     return emd_distance
-
-# class ChamferDistance(torch.nn.Module):
-#     def __init__(self):
-#         super(ChamferDistance, self).__init__()
-#         self.batch_size = 32
-#     def process_pc2(self, tree1, pc2, dist1_list):
-#         for i in range(0, len(pc2), self.batch_size):
-#             # print(f"pc2 {i}")
-#             pc2_batch = pc2[i:i + self.batch_size]
-#             pc2_batch_cpu = pc2_batch.cpu().detach().numpy()
-#             dist1, _ = tree1.query(pc2_batch_cpu, k=1)
-#             dist1_list.append(np.mean(dist1))
-#         return dist1_list
-
-#     def process_pc1(self, tree2, pc1, dist2_list):
-#         for i in range(0, len(pc1), self.batch_size):
-#             # print(f"pc1 {i}")
-#             pc1_batch = pc1[i:i + self.batch_size]
-#             pc1_batch_cpu = pc1_batch.cpu().detach().numpy()
-#             dist2, _ = tree2.query(pc1_batch_cpu, k=1)
-#             dist2_list.append(np.mean(dist2))
-#         return dist2_list
-#     def forward(self, pc1, pc2):
-#         reshapedpc1 = pc1.reshape(-1,3)
-#         reshapedpc2 = pc2.reshape(-1,3)
-#         pc1 = reshapedpc1.cpu().detach().numpy()
-#         pc2 = reshapedpc2.cpu().detach().numpy()
-#         tree1 = cKDTree(pc1)
-#         tree2 = cKDTree(pc2)
-#         dist1_list = []
-#         dist2_list = []
-
-#         # print(len(pc1))
-#         # print(len(pc2))
-#         # # Compute chamfer distance
-#         # with ThreadPoolExecutor(max_workers=20) as executor:
-#         #     future_pc2 = executor.submit(self.process_pc2, tree1, reshapedpc2, dist1_list)
-#         #     future_pc1 = executor.submit(self.process_pc1, tree2, reshapedpc1, dist2_list)
-#         #     # Wait for both futures to complete
-#         #     dist1_list = future_pc2.result()
-#         #     dist2_list = future_pc1.result()
-#         # chamfer_dist = np.mean(dist1_list) + np.mean(dist2_list)
-
-#         # return torch.tensor(chamfer_dist, dtype=torch.float32).to(pc1.device)
-#         dist1, _ = tree1.query(pc2, k=1)
-#         dist2, _ = tree2.query(pc1, k=1)
-#         chamfer_dist = np.mean(dist1) + np.mean(dist2)
-#         return torch.tensor(chamfer_dist, dtype=torch.float32).to('cpu')
 
 
 class ChamferDistance(torch.nn.Module):
@@ -325,12 +274,15 @@ class ApproximateEMDNew(torch.nn.Module):
         # Average loss over batch
         emd_loss /= batch_size
         return emd_loss
+    
+from chamferdist import ChamferDistance
 class CombinedLoss(nn.Module):
     def __init__(self, alpha=0.5,beta=0.5):
         super(CombinedLoss, self).__init__()
         self.chamfer = ChamferDistance()
         # self.emd = ApproximateEMDNew()
         self.mse = nn.MSELoss()
+        self.mse2=nn.MSELoss()
         self.alpha = alpha
         self.beta = beta
 
@@ -350,6 +302,8 @@ class CombinedLoss(nn.Module):
         # emd_dist = pairwise_distances(pc1[0], pc2)
 
         ground_truth_scores = compute_confidence_score(pc3, pc2)  # Output shape: [32, 1000, 1]
+        # print(ground_truth_scores.shape, pc1[3].shape)
+        # print(ground_truth_scores, pc1[3])
         confidenseScoreLoss = self.mse(pc1[3],ground_truth_scores)
 
         seedGeneratorLoss = self.chamfer(pc1[1],pc2)
@@ -357,8 +311,12 @@ class CombinedLoss(nn.Module):
         cd = self.chamfer(pc1[0], pc2)
         upSamplingBlockLoss = self.alpha * cd #+ (1 - self.alpha) * emd_dist
 
-        finalLoss = self.alpha*confidenseScoreLoss + upSamplingBlockLoss + self.beta*seedGeneratorLoss
+        point2point=self.mse2(pc1[0],pc2)
+
+        finalLoss = upSamplingBlockLoss + self.beta*seedGeneratorLoss+self.alpha*confidenseScoreLoss+point2point
+        # finalLoss = self.alpha*confidenseScoreLoss
         return finalLoss
+        # return self.alpha*confidenseScoreLoss, upSamplingBlockLoss, self.beta*seedGeneratorLoss
 
 
 

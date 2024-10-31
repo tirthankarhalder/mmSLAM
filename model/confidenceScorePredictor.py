@@ -101,6 +101,7 @@ class ConfidenceScorePredictor(nn.Module):
         self.maxPool = MaxPooling(256,256)
 
     def forward(self, x):
+        # print("Input.shape : ",x.shape)
         layer1 = self.mlp1(x)
         # print("layer1.shape",layer1.shape)
         layer2 = self.mlp2(layer1)
@@ -125,6 +126,18 @@ class ConfidenceScorePredictor(nn.Module):
         # print("output.shape: ",output.shape)
         return output
 
+
+def compute_confidence_score(input_pcd, gt_pcd):
+    batch_size, num_points, _ = input_pcd.shape
+    _, gt_num_points, _ = gt_pcd.shape
+    input_pcd_exp = input_pcd.unsqueeze(2).repeat(1, 1, gt_num_points, 1)  #[32, 1000, N, 3]
+    gt_pcd_exp = gt_pcd.unsqueeze(1).repeat(1, num_points, 1, 1)  #[32, 1000, N, 3]
+    distances = torch.norm(input_pcd_exp - gt_pcd_exp, dim=-1)  #[32, 1000, N]
+    min_distances, _ = torch.min(distances, dim=-1)  #[32, 1000]
+    ground_truth_scores = torch.exp(-min_distances)  #[32, 1000]
+    return ground_truth_scores.unsqueeze(-1)  #[32, 1000, 1]
+
+
 if __name__ == "__main__":
     batch_size = 32
     N = 1000  
@@ -134,6 +147,18 @@ if __name__ == "__main__":
 
     model = ConfidenceScorePredictor().to(device)
     x = torch.randn(batch_size,N, 3)
+    y = torch.randn(batch_size,3000, 3)
+    y_conf=compute_confidence_score(x,y)
+    loss=nn.MSELoss()
+    optimizer=torch.optim.Adam(model.parameters(), 1e-4)
+
     output = model(x)
-    print("Output shape:", output.shape)
+
+    optimizer.zero_grad()
+    mse=loss(y_conf,output)
+    print("Output shape:", output.shape,mse.item())
+    mse.backward()
+    print(mse.item())
+    for p in model.parameters():
+        print(p.grad.norm())
 

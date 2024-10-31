@@ -47,10 +47,10 @@ class SeedGenerator(nn.Module):
         self.mlp5 = MLP(128,64)
         self.mlp6 = MLP(64,3,activation=False)
         self.upCon = UpConv1D(512,128,1)
+        self.noiseAwareFF = NoideAwareFeatureExtractor()
 
     def forward(self, x):
-        noiseAwareFF = NoideAwareFeatureExtractor().to(x.device)
-        noiseAwareFFWeights,confidenseScoreWeights = noiseAwareFF(x)
+        noiseAwareFFWeights,confidenseScoreWeights = self.noiseAwareFF(x)
         # print("==============================")
         # print("noiseAwareFFWeights.shape",noiseAwareFFWeights.shape)
 

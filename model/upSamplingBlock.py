@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from .seedGenerator import SeedGenerator 
-from .customLossFunction import ChamferDistance
+from .customLossFunction import CombinedLoss
 class MLP(nn.Module):
     def __init__(self, input_channels, output_channels,relu=True,activation=True):
         super(MLP, self).__init__()
@@ -106,11 +106,11 @@ class UpSamplingBlock(nn.Module):
         self.mlp6 = MLP(64,3,activation=False)
         self.dgCNN1 = DGCNNLayer(64,64)
         self.upCon = UpConv1D(128,128,3)#1 is upsample ratio !!!!
+        self.seedGen=SeedGenerator()
 
     def forward(self, x):
         
-        seedGen = SeedGenerator().to(x.device)
-        seedGenWwights,noiseAwareFFWeights,confidenseScoreWeights = seedGen(x)
+        seedGenWwights,noiseAwareFFWeights,confidenseScoreWeights = self.seedGen(x)
         # print("==============================")
         # print("seedGenWwights.shape",seedGenWwights.shape)
         layer1 = self.mlp1(seedGenWwights)
@@ -144,8 +144,25 @@ if __name__ == "__main__":
     input_channels = 3
     output_channels = 128
     device = torch.device("cpu")
-
+    loss=CombinedLoss()#nn.MSELoss()
     model = UpSamplingBlock().to(device)
+    
+    # model=nn.Sequential(
+    #     nn.Flatten(),
+    #     nn.Linear(3000,9000),
+    #     nn.Unflatten(1, (3000,3))
+    # )
+
+    optimizer=torch.optim.Adam(model.parameters(), 1e-4)
+
+
     x = torch.randn(batch_size,N, input_channels)
+    y = torch.randn(batch_size,3000, input_channels)
     output = model(x)
+    optimizer.zero_grad()
+    mse=loss(output,y,x)
+    mse.backward()
+    print(mse.item())
+    for p in model.parameters():
+        print(p.grad.norm())
 

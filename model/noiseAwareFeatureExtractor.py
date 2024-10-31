@@ -89,14 +89,14 @@ class NoideAwareFeatureExtractor(nn.Module):
         self.pConv2 = PointConvLayer(384,384)
 
         self.maxPool = MaxPooling(512,512)
+        self.confidenseScore = ConfidenceScorePredictor()
 
 
 
 
     def forward(self,x):
         # batch,num_points,_ = x.size()
-        confidenseScore = ConfidenceScorePredictor().to(x.device)
-        confidenseScoreWeights = confidenseScore(x)
+        confidenseScoreWeights = self.confidenseScore(x)
         # print("==============================")
         # print("confidenseScoreWeights.shape",confidenseScoreWeights.shape)
         feature_concat = torch.cat((confidenseScoreWeights,x),dim=2)
