@@ -179,8 +179,8 @@ if __name__ == "__main__":
 
 
     batch_size = 32
-    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
-    device = torch.device("cpu")   
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
+    # device = torch.device("cpu")   
     train_radar, temp_radar, train_depth, temp_depth = train_test_split(total_frameStackedRadar, total_frameStackedDepth, test_size=0.3, random_state=42)
     val_radar, test_radar, val_depth, test_depth = train_test_split(temp_radar, temp_depth, test_size=0.5, random_state=42)  # 15% test, 15% validation
 

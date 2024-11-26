@@ -161,6 +161,7 @@ if __name__ == "__main__":
     output = model(x)
     optimizer.zero_grad()
     mse=loss(output,y,x)
+    print(mse)
     mse.backward()
     print(mse.item())
     for p in model.parameters():
