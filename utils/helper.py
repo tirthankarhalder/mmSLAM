@@ -183,7 +183,7 @@ def generate_pcd(filename, info_dict):
 
 
 
-def generate_pcd_time(filename, info_dict, fixedPoint = False):
+def generate_pcd_time(filename, info_dict, fixedPoint = False,fixedPointVal=1000):
     NUM_FRAMES = info_dict[' Nf'][0]
     with open(filename, 'rb') as ADCBinFile: 
         frames = np.frombuffer(ADCBinFile.read(cfg.FRAME_SIZE*4*NUM_FRAMES), dtype=np.uint16)
@@ -281,7 +281,7 @@ def generate_pcd_time(filename, info_dict, fixedPoint = False):
             frame_pcd[idx,5] = point_cloud.angle
 
         if fixedPoint:
-            frame_pcd = reg_data(frame_pcd,1000)
+            frame_pcd = reg_data(frame_pcd,fixedPointVal)
             
         pcd_datas.append(frame_pcd)
 

@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F 
-from .noiseAwareFeatureExtractor import NoideAwareFeatureExtractor
+from noiseAwareFeatureExtractor import NoideAwareFeatureExtractor
 class MLP(nn.Module):
     def __init__(self, input_channels, output_channels,relu=True,activation=True):
         super(MLP, self).__init__()
@@ -60,10 +60,10 @@ class SeedGenerator(nn.Module):
         layer1 = self.upCon(layer_repeat)
         # print("layer1.shape",layer1.shape)
 
-        layer1_upsampled = F.interpolate(layer1.permute(0, 2, 1), size=(1000), mode='linear', align_corners=False).permute(0, 2, 1)
+        layer1_upsampled = F.interpolate(layer1.permute(0, 2, 1), size=(x.shape[1]), mode='linear', align_corners=False).permute(0, 2, 1)
         # print("layer1_upsampled.shape: ", layer1_upsampled.shape)
 
-        layer_repeat2 = noiseAwareFFWeights.unsqueeze(1).repeat(1,1000,1)
+        layer_repeat2 = noiseAwareFFWeights.unsqueeze(1).repeat(1,x.shape[1],1)
         # print("layer_repeat2.shape: ", layer_repeat2.shape)
 
         concat_layer1 = torch.cat((layer1_upsampled,layer_repeat2),dim=2)

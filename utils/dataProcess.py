@@ -12,7 +12,8 @@ def pointcloud_openradar(file_name):
     info_dict = get_info(file_name)
     run_data_read_only_sensor(info_dict)
     bin_filename = './datasets/radar_data/only_sensor_' + info_dict['filename'][0]
-    pcd_data, time = generate_pcd_time(bin_filename, info_dict,fixedPoint=True)
+    # make fixedPoint True get fixed number of points
+    pcd_data, time = generate_pcd_time(bin_filename, info_dict,fixedPoint=True,fixedPointVal=1000)
     # print(pcd_data.shape)
     return pcd_data, time
 

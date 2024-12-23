@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from .seedGenerator import SeedGenerator 
-from .customLossFunction import CombinedLoss
+from seedGenerator import SeedGenerator 
+from customLossFunction import CombinedLoss
 class MLP(nn.Module):
     def __init__(self, input_channels, output_channels,relu=True,activation=True):
         super(MLP, self).__init__()
@@ -120,7 +120,7 @@ class UpSamplingBlock(nn.Module):
         layer3 = self.dgCNN1(layer2)
         # print("layer3.shape: ", layer3.shape)
 
-        layer_repeat1 = noiseAwareFFWeights.unsqueeze(1).repeat(1,1000,1)
+        layer_repeat1 = noiseAwareFFWeights.unsqueeze(1).repeat(1,x.shape[1],1)
         # print("layer_repeat1.shape: ", layer_repeat1.shape)
 
         concat_layer1 = torch.cat((layer3,layer_repeat1),dim=2)
@@ -140,10 +140,10 @@ class UpSamplingBlock(nn.Module):
 
 if __name__ == "__main__":
     batch_size = 32
-    N = 1000  
+    N = 1024  
     input_channels = 3
     output_channels = 128
-    device = torch.device("cpu")
+    device = torch.device("cuda:0")
     loss=CombinedLoss()#nn.MSELoss()
     model = UpSamplingBlock().to(device)
     
@@ -156,8 +156,8 @@ if __name__ == "__main__":
     optimizer=torch.optim.Adam(model.parameters(), 1e-4)
 
 
-    x = torch.randn(batch_size,N, input_channels)
-    y = torch.randn(batch_size,3000, input_channels)
+    x = torch.randn(batch_size,N, input_channels).to(device)
+    y = torch.randn(batch_size,3072, input_channels).to(device)
     output = model(x)
     optimizer.zero_grad()
     mse=loss(output,y,x)

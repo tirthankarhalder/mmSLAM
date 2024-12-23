@@ -81,7 +81,7 @@ startProcessingForNewData = False
 randomDownSample = False
 doDownSampling = False
 visulization = False
-target_num_points = 3000
+target_num_points = 3072
 
 if __name__ == "__main__":
 

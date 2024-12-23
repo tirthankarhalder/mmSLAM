@@ -1,0 +1,5 @@
+# ninja log v5
+1	20078	1733419983141665331	/home/tirtha/mmSLAM/Emd/build/temp.linux-x86_64-cpython-38/emd_cuda.o	1f1c80fe860258b0
+1	25344	1733419988407369653	/home/tirtha/mmSLAM/Emd/build/temp.linux-x86_64-cpython-38/emd.o	ad1880dd1c5fec26
+16	20451	1733462552717486894	/home/tirtha/mmSLAM/model/Emd/build/temp.linux-x86_64-cpython-38/emd_cuda.o	4928a6f863f0ee6b
+15	25703	1733462557967427656	/home/tirtha/mmSLAM/model/Emd/build/temp.linux-x86_64-cpython-38/emd.o	ab6b09bd499555e2

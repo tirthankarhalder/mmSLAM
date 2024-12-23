@@ -2,12 +2,13 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F 
-from .confidenceScorePredictor import ConfidenceScorePredictor
+from confidenceScorePredictor import ConfidenceScorePredictor
 
 
 
 def farthest_point_sampling(xyz, npoint):
     device = xyz.device
+    # print("Device: ",device)
     B, N, C = xyz.shape
     # print("FPS: ",xyz.shape)
     centroids = torch.zeros(B, npoint, dtype=torch.long).to(device)
@@ -107,7 +108,8 @@ class NoideAwareFeatureExtractor(nn.Module):
         # print("layer2.shape: ", layer2.shape)
 
         B, N, _ = x.shape
-        sampled_idx = farthest_point_sampling(x, 500)
+        print(N/2)
+        sampled_idx = farthest_point_sampling(x, int(N/2))
 
         new_xyz = torch.gather(x, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, 3))
         new_features = torch.gather(layer2, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, layer2.size(-1)))
@@ -128,8 +130,8 @@ class NoideAwareFeatureExtractor(nn.Module):
         layer5 = self.mlp4(layer4)
         # print("layer5.shape: ",layer5.shape)
 
-        B, N, _ = new_xyz.shape
-        sampled_idx = farthest_point_sampling(new_xyz, 250)
+        B, N, _ = x.shape
+        sampled_idx = farthest_point_sampling(new_xyz, int(N/4))
 
         new_xyz = torch.gather(new_xyz, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, 3))
         new_features = torch.gather(layer5, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, layer5.size(-1)))
@@ -147,7 +149,7 @@ class NoideAwareFeatureExtractor(nn.Module):
         # print("layer7.shape: ",layer7.shape)
 
         B, N, _ = x.shape
-        sampled_idx = farthest_point_sampling(new_xyz, 125)
+        sampled_idx = farthest_point_sampling(new_xyz, int(N/8))
 
         new_xyz = torch.gather(x, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, 3))
         new_features = torch.gather(layer7, 1, sampled_idx.unsqueeze(-1).expand(-1, -1, layer7.size(-1)))

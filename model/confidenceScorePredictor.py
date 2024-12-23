@@ -41,7 +41,7 @@ class DGCNNLayer(nn.Module):
         # print("DGCNN after kNN: ",x.shape)
 
         x = x.permute(0, 2, 1)
-        
+        print(x.device)
         # Dynamic graph construction
         idx_base = torch.arange(0, batch_size, device=x.device).view(-1, 1, 1) * num_points
         idx = idx + idx_base
@@ -116,7 +116,7 @@ class ConfidenceScorePredictor(nn.Module):
         # print("layer6.shape: ",layer6.shape)
         layer7 = self.maxPool(layer6)
         # print("layer7.shape: ",layer7.shape)
-        layer_repeat = layer7.unsqueeze(1).repeat(1,1000,1)
+        layer_repeat = layer7.unsqueeze(1).repeat(1,x.shape[1],1)
         # print("layer_repeat.shape: ",layer_repeat.shape)
         layer8 = torch.cat((layer_repeat,layer6,layer3),dim=2)
         # print("layer8.shape: ",layer8.shape)
@@ -143,7 +143,7 @@ if __name__ == "__main__":
     N = 1000  
     input_channels = 3
     output_channels = 32
-    device = torch.device("cpu")
+    device = torch.device("cuda")
 
     model = ConfidenceScorePredictor().to(device)
     x = torch.randn(batch_size,N, 3)
