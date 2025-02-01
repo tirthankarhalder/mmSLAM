@@ -162,7 +162,7 @@ if __name__ == "__main__":
             ax3.set_ylabel('Y')
             ax3.set_zlabel('Z')
             plt.tight_layout()
-            plt.savefig(f"./visualization/RadarDepth/radarDepth_{target_num_points}_{str(frameIDX)}.png")
+            plt.savefig(f"./visualization/RadarDepthNew/radarDepth_{target_num_points}_{str(frameIDX)}.png")
             # plt.show()
             plt.close()
             if index ==3:

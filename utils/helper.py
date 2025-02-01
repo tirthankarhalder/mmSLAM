@@ -1,6 +1,7 @@
 import struct
 import pickle
 import numpy as np
+# import utils.configuration as cfg
 import utils.configuration as cfg
 from matplotlib.colors import LinearSegmentedColormap
 import matplotlib.pyplot as plt

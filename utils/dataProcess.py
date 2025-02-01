@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import concurrent.futures
 from utils.helper import *
+# from app.utils.helper import *
 import gc
 import time
 
@@ -123,8 +124,8 @@ def save_partial_results(fileDepthFrame, fileDepthFrameTimestamps, file):
         pickle.dump((fileDepthFrame, fileDepthFrameTimestamps), f)
 
 
-def preprocess_ExportData(visualization=False):                
-    datasetsFolderPath = './datasets/'
+def preprocess_ExportData(path,visualization=False):                
+    datasetsFolderPath = path
     radarFilePath = os.path.join(datasetsFolderPath,"radar_data/")
     depthFilePath = os.path.join(datasetsFolderPath,"depth_data/")
     filteredBinFile = [f for f in os.listdir(radarFilePath) if os.path.isfile(os.path.join(radarFilePath, f)) and f.endswith('.bin') and not f.startswith('only_sensor')]
@@ -191,6 +192,10 @@ def preprocess_ExportData(visualization=False):
     # mergerdPcdDepth = pd.merge_asof(total_frameRadarDF, total_frameDepth, on='datetime',tolerance=pd.Timedelta('600ms'), direction='nearest')
     # print("mergerdPcdDepth.shape: ",mergerdPcdDepth.shape)
 
+
+    total_frameRadarDF = total_frameRadarDF.sort_values(by='datetime', ascending=True)
+    total_frameDepth = total_frameDepth.sort_values(by='datetime', ascending=True)
+    
     ########################################################################
     mergerdPcdDepth = pd.merge_asof(total_frameRadarDF, total_frameDepth, on='datetime',tolerance=pd.Timedelta('200ms'), direction='nearest')
     print("mergerdPcdDepth.shape: ",mergerdPcdDepth.shape)

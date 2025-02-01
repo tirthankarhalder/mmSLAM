@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from Emd.emd_module import emdFunction
+from .Emd.emd_module import emdFunction
 # from chamferdist import ChamferDistance#installed as packages
 from chamfer_distance import ChamferDistance#local file
 def compute_confidence_score(input_pcd, gt_pcd):
