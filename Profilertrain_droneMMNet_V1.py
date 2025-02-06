@@ -9,7 +9,6 @@ import torch
 import torch.optim as optim
 
 from tqdm import tqdm
-import psutil
 from torch.utils.tensorboard import SummaryWriter
 from torch_geometric.loader import DataLoader
 from torch.optim.lr_scheduler import StepLR
@@ -46,13 +45,15 @@ def noise_score(d):
 
 
     
-def train():
+def train(profiler):
     G.train()
     loss_gen = 0
     loss_ini = 0
     loss_emd = 0
     with tqdm(train_data_loader) as t:
+        profiler.step()
         for step, data in enumerate(t):
+            
             #print(data)
             data = data.to(device)
             #[ele.squeeze().to(device) for ele in data]
@@ -159,7 +160,7 @@ if __name__ == '__main__':
     valid_dataset = DatasetDrone(processedDataFolder_name + 'droneData_Test', split='test')
     print(dataset[0])
 
-    train_data_loader = DataLoader(dataset,batch_size=64, follow_batch=['y', 'x'],shuffle=True,drop_last=True)
+    train_data_loader = DataLoader(dataset,batch_size=32, follow_batch=['y', 'x'],shuffle=True,drop_last=True)
     test_data_loader = DataLoader(valid_dataset, batch_size=4, follow_batch=['y', 'x'],shuffle=False,drop_last=False)
     device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 
@@ -186,20 +187,20 @@ if __name__ == '__main__':
     print('Training started:')
     for epoch in range(0, 701):
         print('Train/Epoch:',epoch)
-        g_loss,i_loss,e_loss = train()
-        scheduler_steplr.step()
-        print('GenLoss: {:.4f} \n'.format(g_loss))
 
-        if torch.cuda.is_available():
-            writer.add_scalar("GPU/memory_allocated_MB", torch.cuda.memory_allocated(device) / 1e6, epoch)
-            writer.add_scalar("GPU/memory_reserved_MB", torch.cuda.memory_reserved(device) / 1e6, epoch)
-            writer.add_scalar("GPU/max_memory_allocated_MB", torch.cuda.max_memory_allocated(device) / 1e6, epoch)
-        cpu_usage = psutil.cpu_percent() 
-        ram_usage = psutil.virtual_memory().percent  
-        
-        writer.add_scalar("CPU/usage_percent", cpu_usage, epoch)
-        writer.add_scalar("CPU/ram_usage_percent", ram_usage, epoch)
-        
+        with torch.profiler.profile(
+            schedule=torch.profiler.schedule(wait=1, warmup=1, active=3, repeat=1),
+            on_trace_ready=torch.profiler.tensorboard_trace_handler(LOGS),
+            record_shapes=True,
+            with_stack=True
+        ) as profiler:
+            
+            g_loss, i_loss, e_loss = train(profiler) 
+            # profiler.step()
+
+        scheduler_steplr.step()
+        print('GenLoss: {:.4f} \n'.format(
+            g_loss))
         writer.add_scalar('Train/ini_loss', i_loss, epoch)
         writer.add_scalar('Train/generator_loss', g_loss, epoch)
         writer.add_scalar('Train/emd_loss', e_loss, epoch)

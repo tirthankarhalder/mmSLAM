@@ -9,7 +9,6 @@ import torch
 import torch.optim as optim
 
 from tqdm import tqdm
-import psutil
 from torch.utils.tensorboard import SummaryWriter
 from torch_geometric.loader import DataLoader
 from torch.optim.lr_scheduler import StepLR
@@ -46,12 +45,12 @@ def noise_score(d):
 
 
     
-def train():
+def train(rank,world_size):
     G.train()
     loss_gen = 0
     loss_ini = 0
     loss_emd = 0
-    with tqdm(train_data_loader) as t:
+    with tqdm(train_data_loader,position=rank) as t:
         for step, data in enumerate(t):
             #print(data)
             data = data.to(device)
@@ -138,11 +137,18 @@ def set_seed(seed):
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-if __name__ == '__main__':
-    processedDataFolder_name = "./processedData/2025-02-05_13-38-22/"
 
-    set_seed(5)
-        
+def main(rank,world_size):
+
+    global writer,train_data_loader,G,ChD,valid_dataset,test_data_loader,device,g_optimizer
+    processedDataFolder_name = "./processedData/2025-02-05_13-38-22/"
+    os.environ['MASTER_ADDR'] = 'localhost'  # or the IP address of the master node
+    os.environ['MASTER_PORT'] = '29500'     # or another open port
+    os.environ['WORLD_SIZE'] = str(world_size)  # total number of processes
+    os.environ['RANK'] = str(rank)
+
+    dist.init_process_group(backend="nccl", rank=rank, world_size=world_size)
+    torch.cuda.set_device(rank)
     output_dir = os.path.join(f'{processedDataFolder_name}dronetrained', '%s', datetime.now().isoformat())
     CHECKPOINTS = output_dir % 'checkpoints'
     LOGS = output_dir % 'logs'
@@ -153,6 +159,7 @@ if __name__ == '__main__':
     shutil.copyfile('MMNet_V1.py', savefile)
     #shutil.copyfile('config.py', CHECKPOINTS+'/config.py')
     #tensorborad writer
+
     writer = SummaryWriter(comment="MMPCD_score_2048_1e4_TV4")
     #dataset = Completion3D('../data/Completion3D', split='train', categories='Airplane')
     dataset = DatasetDrone(processedDataFolder_name + 'droneData_Train', split='train')
@@ -161,12 +168,12 @@ if __name__ == '__main__':
 
     train_data_loader = DataLoader(dataset,batch_size=64, follow_batch=['y', 'x'],shuffle=True,drop_last=True)
     test_data_loader = DataLoader(valid_dataset, batch_size=4, follow_batch=['y', 'x'],shuffle=False,drop_last=False)
-    device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
-
+    # device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+    device = torch.device(f'cuda:{rank}') 
     ## model training parameter
     g_learning_rate = 1e-4
-
     G = Generator().to(device)
+    G = DDP(G, device_ids=[rank], output_device=rank)
 
     fine_tune = False    
     if fine_tune:    
@@ -184,22 +191,13 @@ if __name__ == '__main__':
     scheduler_steplr = StepLR(g_optimizer, step_size=100, gamma=0.5)
     best_loss = 1e10
     print('Training started:')
+
     for epoch in range(0, 701):
         print('Train/Epoch:',epoch)
-        g_loss,i_loss,e_loss = train()
+        g_loss,i_loss,e_loss = train(rank,world_size)
         scheduler_steplr.step()
-        print('GenLoss: {:.4f} \n'.format(g_loss))
-
-        if torch.cuda.is_available():
-            writer.add_scalar("GPU/memory_allocated_MB", torch.cuda.memory_allocated(device) / 1e6, epoch)
-            writer.add_scalar("GPU/memory_reserved_MB", torch.cuda.memory_reserved(device) / 1e6, epoch)
-            writer.add_scalar("GPU/max_memory_allocated_MB", torch.cuda.max_memory_allocated(device) / 1e6, epoch)
-        cpu_usage = psutil.cpu_percent() 
-        ram_usage = psutil.virtual_memory().percent  
-        
-        writer.add_scalar("CPU/usage_percent", cpu_usage, epoch)
-        writer.add_scalar("CPU/ram_usage_percent", ram_usage, epoch)
-        
+        print('GenLoss: {:.4f} \n'.format(
+            g_loss))
         writer.add_scalar('Train/ini_loss', i_loss, epoch)
         writer.add_scalar('Train/generator_loss', g_loss, epoch)
         writer.add_scalar('Train/emd_loss', e_loss, epoch)
@@ -225,7 +223,18 @@ if __name__ == '__main__':
         
         #torch.save(model.state_dict(),'./trained/Color_net_Ch'+'{}'.format(epoch)+'.pt')
 
+if __name__ == '__main__':
+ 
+    
 
+    set_seed(5)
+    world_size = torch.cuda.device_count()
+    mp.spawn(main, args=(world_size,), nprocs=world_size, join=True)
+
+    
+    
+
+    dist.destroy_process_group() 
 
 # def chamfer_sqrt(p1, p2):
 #     d1, d2, _, _ = ChD(p1, p2)

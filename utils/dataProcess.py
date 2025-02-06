@@ -57,8 +57,8 @@ def process_frames(frameSPerFile, file):
     for i in range(len(frameSPerFile)):
         frame = []
         x = frameSPerFile[i][0]['f0']
-        y = frameSPerFile[i][0]['f1']
-        z = frameSPerFile[i][0]['f2']
+        z = frameSPerFile[i][0]['f1']
+        y = frameSPerFile[i][0]['f2']
         print(f"Frame initialized: {i} {file}")
 
         # for pointIndex in range(len(x)):

@@ -240,7 +240,8 @@ print(f"Data Processing Done and data exporte to file {processedDataFolder_name}
 startProcessingForNewData = True
 randomDownSample = False
 doDownSampling = True
-visulization = False
+doDownSampling = True
+visulization = True
 target_num_points = 3072
 
 if visulization:
@@ -304,7 +305,7 @@ if doDownSampling:
             #density based downsampling
             downsampled_pcd = density_based_downsampling(pcd, target_num_points,voxelSize=0.05)
             downsampled_points = np.asarray(downsampled_pcd.points)
-            print("downsampled_points.shape",downsampled_points.shape)
+            # print("downsampled_points.shape",downsampled_points.shape)
             pointcloudRadarDepth.at[index, "sampleDepth"] = downsampled_points
     pointcloudRadarDepth.to_pickle(processedDataFolder_name + "pointcloudRadarDepth.pkl")
     print("Down Samling Done, pointcloudRadarDepth.pkl Exported")
@@ -313,7 +314,7 @@ else:
     print("Existing Down Sampled file imported")
 
 
-if visulization:
+if False:
     # for index,row in pointcloudRadarDepth.iterrows():
     for index, row in tqdm(pointcloudRadarDepth.iterrows(), total=len(pointcloudRadarDepth), desc="Processing frames"):
         frameIDX = np.random.randint(0, pointcloudRadarDepth.shape[0])

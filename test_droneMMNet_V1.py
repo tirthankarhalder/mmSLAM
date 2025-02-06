@@ -20,6 +20,7 @@ from torch_geometric.loader import DataLoader
 from Emd.emd_module import emdFunction
 from datetime import datetime
 import os
+from tqdm import tqdm
 def save_txt(path,pred_pcd):
     '''
     pred_pcd: N by 3
@@ -40,6 +41,7 @@ if __name__ == '__main__':
     
     test_data_loader = DataLoader(test_dataset, batch_size=1, follow_batch=['y', 'x'],shuffle=False,drop_last=False)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # device = 'cpu'
     
     G = Generator().to(device)
     
@@ -70,13 +72,17 @@ if __name__ == '__main__':
 
     G.eval()
     step = 0
-    print ('Valid: ')
+    # print ('Valid: ')
     loss_g =0
     each_chd = []
     each_emd = []
-    for data in test_data_loader:
+    pbar = tqdm(test_data_loader, desc="Testing Progress")
+
+    for data in pbar:
         # print("data shape: ", len(data))
-        print(f"File name: {mat_filenames_array[step]} generated.")
+        # print(f"File name: {mat_filenames_array[step]} generated.")
+        file_name = mat_filenames_array[step]
+        pbar.set_postfix(file=file_name)
         data =data.to(device)
         # 1. Test G 
         gt_pcd = data.y     # 10000 by 3
@@ -106,6 +112,6 @@ if __name__ == '__main__':
         
         savemat(folder_path + f"/{mat_filenames_array[step]}", gen_data)
         step = step + 1
-    print(loss_g/len(test_dataset))
+    print("loss_g/len(test_dataset): ",loss_g/len(test_dataset))
 save_txt(folder_path + "/chd_loss.txt",np.array(each_chd))
 save_txt(folder_path + "/emd_loss.txt",np.array(each_emd))

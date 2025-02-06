@@ -18,6 +18,12 @@ from Emd.emd_module import emdFunction
 from datetime import datetime
 from tqdm import tqdm
 import os
+import scipy.io
+from datetime import datetime
+import matplotlib.pyplot as plt
+from PIL import Image
+
+
 def save_txt(path,pred_pcd):
     '''
     pred_pcd: N by 3
@@ -36,16 +42,23 @@ if __name__ == "__main__":
         for file in files:
             if file.endswith(".jpg"):  
                 file_path = os.path.join(subdir, file)
+                renamedFile = file[:-4]
+                renamedFiletimestamp = datetime.strptime(renamedFile, "%Y-%m-%d_%H_%M_%S_%f")
+                renamedFileFormattedTime = renamedFiletimestamp.strftime("%Y-%m-%d %H:%M:%S.%f") + ".jpg"
                 image = cv2.imread(file_path, cv2.IMREAD_COLOR)
                 date_str, time_hr,time_min,time_sec, microseconds = file[:-4].split("_")
-                datetime_str = f"{date_str} {time_hr}_{time_min}_{time_sec}.{microseconds}"
-                timestamp = datetime.strptime(datetime_str, "%Y-%m-%d %H_%M_%S.%f")
-                formatted_timestamp = timestamp.strftime("%Y-%m-%d %H:%M:%S.000")
+                datetime_str = f"{date_str} {time_hr}:{time_min}:{time_sec}.{microseconds}"
+                timestamp = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S.%f")
+                formatted_timestamp = timestamp.strftime("%Y-%m-%d %H:%M:%S.%f")
                 # print(formatted_timestamp)
-                image_data.append([formatted_timestamp,image, file, file_path])
+                image_data.append([formatted_timestamp, image, renamedFileFormattedTime, file_path])
 
-    rgbCsvDF = pd.DataFrame(image_data, columns=[ "datetime", "rgbImage","filename", "filepath"])
+    rgbCsvDF = pd.DataFrame(image_data, columns=[ "datetime", "rgbImage","rgbFilename", "rgbFilepath"])
     rgbCsvDF["datetime"] = pd.to_datetime(rgbCsvDF["datetime"], format="%Y-%m-%d %H:%M:%S.%f")
+    rgbCsvPath = os.path.join(processedDataFolder_name, "rgbImage.csv")
+    rgbCsvDF.to_csv(rgbCsvPath, index=False)
+    rgbCsvDF.to_pickle(processedDataFolder_name + "rgbImage.pkl")
+    print(f"pkl file saved at: {rgbCsvPath}")
 
     mergedRadarDepth = processedDataFolder_name + "mergedRadarDepth.pkl" 
     mergedRadarDepth = pd.read_pickle(mergedRadarDepth)
@@ -55,36 +68,44 @@ if __name__ == "__main__":
     rgbCsvDF = rgbCsvDF.sort_values(by='datetime', ascending=True)
     mergedRadarDepth = mergedRadarDepth.sort_values(by='datetime', ascending=True)
     
-    mergerdPcdDepthRgb = pd.merge_asof(mergedRadarDepth, rgbCsvDF, on='datetime',tolerance=pd.Timedelta('5ms'), direction='nearest')
-    print("mergerdPcdDepthRgb.shape: ",mergerdPcdDepthRgb.shape)
-    mergerdPcdDepthRgb =mergerdPcdDepthRgb.dropna(subset=['filename'])
-    print("5ms - mergerdPcdDepth after dropna.shape: ",mergerdPcdDepthRgb.shape)
+    mergedPcdDepthRgb = pd.merge_asof(mergedRadarDepth, rgbCsvDF, on='datetime',tolerance=pd.Timedelta('1000ms'), direction='nearest')#change ms
+    print("mergedPcdDepthRgb.shape: ",mergedPcdDepthRgb.shape)
+    mergedPcdDepthRgb =mergedPcdDepthRgb.dropna(subset=['rgbFilename'])
+    print("1000ms - mergedPcdDepthRgb after dropna.shape: ",mergedPcdDepthRgb.shape)
 
 
-    mergerdPcdDepthRgb.to_csv(processedDataFolder_name + "mergerdPcdDepthRgb.csv", index=False)
-    mergerdPcdDepthRgb.to_pickle(processedDataFolder_name + "mergerdPcdDepthRgb.pkl")
+    mergedPcdDepthRgb.to_csv(processedDataFolder_name + "mergerdPcdDepthRgb.csv", index=False)
+    mergedPcdDepthRgb.to_pickle(processedDataFolder_name + "mergerdPcdDepthRgb.pkl")
     print("mergerdPcdDepthRgb.pkl Exported")
 
-    #exporting the pkl for test on slides
+    #exporting the pkl for test on slidesr
     outputDirAll = processedDataFolder_name + "droneData_All/processedData/"  
     txt_file_All = processedDataFolder_name + "droneData_All/datalist.txt" 
 
     os.makedirs(outputDirAll, exist_ok=True)
 
     with open(txt_file_All, "w") as all_out:
-        for idx in tqdm(len(mergedRadarDepth), desc="Saving Train Data", total=len(mergedRadarDepth)):
-            row = mergedRadarDepth.iloc[idx]
-            mat_file_name = f"{idx + 1}_mmwave.mat"
+        for idx,row in tqdm(mergedPcdDepthRgb.iterrows(), desc="Saving All Data", total=len(mergedPcdDepthRgb)):
+            # row = mergedPcdDepthRgb.iloc[idx]
+            # mat_file_name = f"{idx + 1}_mmwave.mat"
+            timestampStr, fTimestampStr = mergedPcdDepthRgb["rgbFilename"][idx].split(".")[:-1]
+            matName = f"{timestampStr}.{fTimestampStr}"
+            mat_file_name = f"{matName}_mmwave.mat"
             mat_file_path = os.path.join(outputDirAll, mat_file_name)
 
             savemat(mat_file_path, {
-                'radarPCD': row['radarPCD'],
-                'depthPCD': row['depthPCD'],
-                'datetime': row['datetime']
+                'radarPCD': mergedPcdDepthRgb['radarPCD'][idx],
+                'depthPCD': mergedPcdDepthRgb['depthPCD'][idx],
+                'datetime': mergedPcdDepthRgb['datetime'][idx]
             })
             all_out.write(mat_file_path + "\n")
-    print(f"Exported {len(mergedRadarDepth)} testing .mat files to '{outputDirAll}' and recorded in '{txt_file_train}'.")
+    print(f"Exported {len(mergedPcdDepthRgb)} testing .mat files to '{outputDirAll}' and recorded in '{txt_file_All}'.")
 
+    with open(txt_file_All, "r") as f:
+        mat_file_paths = [line.strip() for line in f.readlines() if line.strip().endswith(".mat")]
+
+    mat_filenames = [path.split("/")[-1] for path in mat_file_paths]
+    mat_filenames_array = np.array(mat_filenames)
 
     test_dataset = DatasetDrone(processedDataFolder_name + 'droneData_All', split='test')
     
@@ -99,23 +120,27 @@ if __name__ == "__main__":
     checkpoint = torch.load(model_path)
     G.load_state_dict(checkpoint['Gen_state_dict'])
 
-    parentDir = processedDataFolder_name + "outputDroneAll/"
+    resultMatFolderPath = processedDataFolder_name + "outputDroneAll/"
     # current_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     timeDir = processedDataFolder_name.split("/")[-2]
     #enable it when multiple test scenios required
-    # folder_path = os.path.join(parentDir, timeDir)
-    folder_path = parentDir
+    # folder_path = os.path.join(resultMatFolderPath, timeDir)
+    folder_path = resultMatFolderPath
     os.makedirs(folder_path,exist_ok=True)
 
     G.eval()
     step = 0
-    print ('Valid: ')
+    # print ('Valid: ')
     loss_g =0
     each_chd = []
     each_emd = []
-    for data in test_data_loader:
+
+    progressBar = tqdm(test_data_loader, desc="Testing Progress")
+
+    for data in progressBar:
         # print("data shape: ", len(data))
-        print(f"File no: {step+1} generated")
+        file_name = mat_filenames_array[step]
+        progressBar.set_postfix(file=file_name)
         data =data.to(device)
         # 1. Test G 
         gt_pcd = data.y     # 10000 by 3
@@ -143,11 +168,122 @@ if __name__ == "__main__":
         each_chd.append(g_error.item())
         each_emd.append(emd_error.item())
 
-        savemat(folder_path + "/result"+str(step)+".mat", gen_data)
+        savemat(folder_path + f"/{mat_filenames_array[step]}", gen_data)
         step = step + 1
     print(loss_g/len(test_dataset))
-save_txt(folder_path + "/chd_loss.txt",np.array(each_chd))
-save_txt(folder_path + "/emd_loss.txt",np.array(each_emd))
+    save_txt(folder_path + "/chd_loss.txt",np.array(each_chd))
+    save_txt(folder_path + "/emd_loss.txt",np.array(each_emd))
+
+    #plotting the graph
+    all_files = os.listdir(resultMatFolderPath)
+    folder_path = processedDataFolder_name + "visualization/testResultAll"
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+        print(f"Folder '{folder_path}' created.")
+    else:
+        print(f"Folder '{folder_path}' already exists.")
+
+
+    mat_files = [file for file in all_files if file.endswith('.mat')]
+    progressBar = tqdm(mat_files, desc="Plotting .mat files")
+    for mat_file in progressBar:
+        progressBar.set_postfix(file=mat_file)
+        file_path = os.path.join(resultMatFolderPath, mat_file)
+        mat_data = scipy.io.loadmat(file_path)
+        # print(f"Loaded {mat_file}")
+        # print("Keys in the .mat file:", mat_data.keys())
+        # for columns in header:
+            # data = mat_data[columns]
+            # print(f"Shape of the {columns}:", data.shape)
+
+        header = ['input', 'pred_pcd', 'gt_pcd', 'Chd', 'EMD']
+
+        input_points = mat_data['input']
+        pred_points = mat_data['pred_pcd']
+        gt_points = mat_data['gt_pcd']
+
+
+        fig = plt.figure(figsize=(20, 7))
+        fig.suptitle(f"Point Cloud Visualization: {mat_file}", fontsize=7, fontweight='bold')  # Main title
+
+        ax1 = fig.add_subplot(141, projection='3d')
+        scatter1 = ax1.scatter(input_points[:, 0], input_points[:, 1], input_points[:, 2], 
+                            c=input_points[:, 2], cmap='viridis', s=1)
+        ax1.set_title("Input Point Cloud")
+        ax1.set_xlabel("X")
+        ax1.set_ylabel("Y")
+        ax1.set_zlabel("Z")
+
+        ax2 = fig.add_subplot(142, projection='3d')
+        scatter2 = ax2.scatter(pred_points[:, 0], pred_points[:, 1], pred_points[:, 2], 
+                            c=pred_points[:, 2], cmap='viridis', s=1)
+        ax2.set_title("Predicted Point Cloud")
+        ax2.set_xlabel("X")
+        ax2.set_ylabel("Y")
+        ax2.set_zlabel("Z")
+        ax3 = fig.add_subplot(143, projection='3d')
+        scatter3 = ax3.scatter(gt_points[:, 0], gt_points[:, 1], gt_points[:, 2], 
+                            c=gt_points[:, 2], cmap='viridis', s=1)
+        ax3.set_title("Ground Truth Point Cloud")
+        ax3.set_xlabel("X")
+        ax3.set_ylabel("Y")
+        ax3.set_zlabel("Z")
+
+        ax4 = fig.add_subplot(144)
+        timestampStr = mat_file.split("_")[0]
+
+        timestampStr = datetime.strptime(timestampStr, "%Y-%m-%d %H:%M:%S.%f")
+        rgbFileNa = timestampStr.strftime("%Y-%m-%d %H:%M:%S.%f") + ".jpg"
+        # print(rgbFileNa)
+        rgbFilePt = mergedPcdDepthRgb.loc[mergedPcdDepthRgb['rgbFilename'] == rgbFileNa, 'rgbFilepath']
+        if not rgbFilePt.empty:
+            rgbFilePt = rgbFilePt.iloc[0] 
+        else:
+            rgbFilePt = None
+        img = Image.open(rgbFilePt)
+
+        ax4.imshow(img)  # Display the RGB image
+        ax4.set_title("RGB Image")
+        ax4.axis("off")
+
+        plt.tight_layout(rect=[0, 0.03, 1, 0.95]) 
+        plt.savefig(f"{folder_path}/{mat_file}.png", dpi=300, bbox_inches='tight')
+        # plt.show()
+        plt.close(fig)
+        #uncommet for 3 plot 
+        # fig = plt.figure(figsize=(20, 7))
+        # fig.suptitle(f"Point Cloud Visualization: {mat_file}", fontsize=16, fontweight='bold')  # Main title
+
+        # ax1 = fig.add_subplot(131, projection='3d')
+        # scatter1 = ax1.scatter(input_points[:, 0], input_points[:, 1], input_points[:, 2], 
+        #                     c=input_points[:, 2], cmap='viridis', s=1)
+        # ax1.set_title("Input Point Cloud")
+        # ax1.set_xlabel("X")
+        # ax1.set_ylabel("Y")
+        # ax1.set_zlabel("Z")
+
+        # ax2 = fig.add_subplot(132, projection='3d')
+        # scatter2 = ax2.scatter(pred_points[:, 0], pred_points[:, 1], pred_points[:, 2], 
+        #                     c=pred_points[:, 2], cmap='viridis', s=1)
+        # ax2.set_title("Predicted Point Cloud")
+        # ax2.set_xlabel("X")
+        # ax2.set_ylabel("Y")
+        # ax2.set_zlabel("Z")
+        # ax3 = fig.add_subplot(133, projection='3d')
+        # scatter3 = ax3.scatter(gt_points[:, 0], gt_points[:, 1], gt_points[:, 2], 
+        #                     c=gt_points[:, 2], cmap='viridis', s=1)
+        # ax3.set_title("Ground Truth Point Cloud")
+        # ax3.set_xlabel("X")
+        # ax3.set_ylabel("Y")
+        # ax3.set_zlabel("Z")
+
+        # plt.tight_layout(rect=[0, 0.03, 1, 0.95]) 
+        # plt.savefig(f"{folder_path}/{mat_file}.png", dpi=300, bbox_inches='tight')
+        # # plt.show()
+        # plt.close(fig)
+
+
+
 
 
 

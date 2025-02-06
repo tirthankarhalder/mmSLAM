@@ -3,6 +3,7 @@ import scipy.io
 from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
+from tqdm import tqdm
 
 processedDataFolder_name = "./processedData/2025-02-01_14-28-44/"
 matfolder_path = processedDataFolder_name + "outputDroneTest"
@@ -20,20 +21,22 @@ else:
     print(f"Folder '{folder_path}' already exists.")
 
 mat_files = [file for file in all_files if file.endswith('.mat')]
-for mat_file in mat_files:
+for mat_file in tqdm(mat_files, desc="Plotting .mat files"):
     file_path = os.path.join(matfolder_path, mat_file)
     mat_data = scipy.io.loadmat(file_path)
-    print(f"Loaded {mat_file}")
+    # print(f"Loaded {mat_file}")
+    # print("Keys in the .mat file:", mat_data.keys())
+    # for columns in header:
+        # data = mat_data[columns]
+        # print(f"Shape of the {columns}:", data.shape)
 
-    print("Keys in the .mat file:", mat_data.keys())
     header = ['input', 'pred_pcd', 'gt_pcd', 'Chd', 'EMD']
-    for columns in header:
-        data = mat_data[columns]
-        print(f"Shape of the {columns}:", data.shape)
+
     input_points = mat_data['input']
     pred_points = mat_data['pred_pcd']
     gt_points = mat_data['gt_pcd']
     fig = plt.figure(figsize=(20, 7))
+    fig.suptitle(f"Point Cloud Visualization: {mat_file}", fontsize=16, fontweight='bold')  # Main title
 
     ax1 = fig.add_subplot(131, projection='3d')
     scatter1 = ax1.scatter(input_points[:, 0], input_points[:, 1], input_points[:, 2], 
@@ -57,6 +60,8 @@ for mat_file in mat_files:
     ax3.set_xlabel("X")
     ax3.set_ylabel("Y")
     ax3.set_zlabel("Z")
-    plt.tight_layout()
+    # plt.tight_layout()
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95]) 
     plt.savefig(f"{folder_path}/combined_point_clouds_drone_trained_{file_path.split('/')[-1].split('.')[0]}.png", dpi=300, bbox_inches='tight')
-    plt.show()
+    # plt.show()
+    plt.close(fig)

@@ -57,7 +57,7 @@ def read_list(processed_path,split):
 def get_item(scene_list,data_path,idx):
     '''
     '''
-    print("idx: ",idx)
+    # print("idx: ",idx)
     path = scene_list[idx]
     # in_path = path.lstrip('..')
     
@@ -66,7 +66,7 @@ def get_item(scene_list,data_path,idx):
     mat_file = path
     # print(mat_file)
     mat = loadmat(mat_file)
-    print(len(mat))
+    # print(len(mat))
     gt_cloud = mat['depthPCD']
     #resampling gt_cloud
     b_idx = np.random.choice(gt_cloud.shape[0],16384,replace=True)
