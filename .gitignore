@@ -45,8 +45,6 @@ helperDup.py
 tempCodeRunnerFile.py
 .vscode
 processedData/
-chamfer_distance/
-Emd/
 runs/
 old res/
 visualization/
