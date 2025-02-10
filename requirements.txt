@@ -8,7 +8,7 @@ setuptools==52.0.0
 torchsummary==1.5.1
 torchinfo
 seaborn
-torch-tb-profiler-0.4.3
+#torch-tb-profiler-0.4.3
 
 
 

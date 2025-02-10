@@ -95,11 +95,11 @@ def train(rank,world_size):
     return loss_gen/step, loss_ini/step, loss_emd/step
 
 
-def valid():
+def valid(rank,world_size):
     G.eval()
     loss_g = 0
     loss_e = 0
-    with tqdm(test_data_loader) as t:
+    with tqdm(test_data_loader,position=rank) as t:
         for step, data in enumerate(t):
             # introduce noise for y_color
             data =data.to(device)
@@ -149,6 +149,7 @@ def main(rank,world_size):
 
     dist.init_process_group(backend="nccl", rank=rank, world_size=world_size)
     torch.cuda.set_device(rank)
+    
     output_dir = os.path.join(f'{processedDataFolder_name}dronetrained', '%s', datetime.now().isoformat())
     CHECKPOINTS = output_dir % 'checkpoints'
     LOGS = output_dir % 'logs'
@@ -167,9 +168,10 @@ def main(rank,world_size):
     print(dataset[0])
 
     train_data_loader = DataLoader(dataset,batch_size=64, follow_batch=['y', 'x'],shuffle=True,drop_last=True)
-    test_data_loader = DataLoader(valid_dataset, batch_size=4, follow_batch=['y', 'x'],shuffle=False,drop_last=False)
+    test_data_loader = DataLoader(valid_dataset, batch_size=1, follow_batch=['y', 'x'],shuffle=False,drop_last=False)
     # device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
-    device = torch.device(f'cuda:{rank}') 
+    device = torch.device(f'cuda:{rank}')
+    # torch.cuda.set_device(device, 'cuda', memory_growth=True) 
     ## model training parameter
     g_learning_rate = 1e-4
     G = Generator().to(device)
@@ -203,7 +205,7 @@ def main(rank,world_size):
         writer.add_scalar('Train/emd_loss', e_loss, epoch)
         if epoch % 5 ==0:
             print('Valid/Epoch')
-            g_loss,e_loss = valid()
+            g_loss,e_loss = valid(rank,world_size)
             print('GenLoss: {:.4f} \n'.format(g_loss))
             writer.add_scalar('Test/L1ChD_loss', g_loss, epoch)
             writer.add_scalar('Test/emd_loss', e_loss, epoch)
