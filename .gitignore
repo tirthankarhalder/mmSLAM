@@ -26,8 +26,6 @@ lidar_data/
 telemetry_data/
 animations/
 *.gif
-**/*.ipynb
-*.ipynb
 *.bin
 *.csv
 *.dat
@@ -39,8 +37,6 @@ datasets/
 HectorSlamX4/
 checkpoints
 *.pth
-*.c
-*.h
 helperDup.py
 tempCodeRunnerFile.py
 .vscode
