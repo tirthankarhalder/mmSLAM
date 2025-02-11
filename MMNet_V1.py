@@ -2,7 +2,7 @@
 
 """
 Created on Fri Dec 7 14:42:00 2021
-@author: pingping
+@author: tirtha
 Original Data:
 x_ini.shape : torch.Size([16, 3]), x_pos.shape : torch.Size([16384, 3]), data.x_batch.shape : torch.Size([16384])
 pred.shape : torch.Size([16, 2048, 3]), gt_pcd.shape : torch.Size([32768, 3])
