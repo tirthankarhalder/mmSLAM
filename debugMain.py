@@ -124,24 +124,39 @@ def pointcloud_openradar(file_name):
     run_data_read_only_sensor(info_dict)
     bin_filename = './datasets/radar_data/only_sensor_' + info_dict['filename'][0]
     # make fixedPoint True get fixed number of points
-    pcd_data, time = generate_pcd_time(bin_filename, info_dict,fixedPoint=True,fixedPointVal=1000)
+    pcd_data, time, powerProfileVal= generate_pcd_time(bin_filename, info_dict,fixedPoint=True,fixedPointVal=1000)
     # print(pcd_data.shape)
-    return pcd_data, time
+    return pcd_data, time, powerProfileVal
 
 
 def process_bin_file(file, radarFilePath):
     """Process a single bin file and generate a CSV."""
     binFileFrame = []
+    binFilesnr = []
+    binFilerange = []
+    binFileangle = []
+    binFilepower = []
+    binFiledoppler = []
     binFilePath = radarFilePath + file
-    gen, timestamps = pointcloud_openradar(file_name=binFilePath)
+    gen, timestamps= pointcloud_openradar(file_name=binFilePath)
 
     for pointcloud in gen:
         binFileFrame.append(pointcloud[:, :3])  # Sliced first 3 as x, y, z
+        binFilepower.append(pointcloud[:,2])
+        binFilesnr.append(pointcloud[:,3])
+        binFilerange.append(pointcloud[:,4])
+        binFileangle.append(pointcloud[:,5])
+        binFilepower.append(pointcloud[:,6])
 
     # Create a DataFrame for this bin file
     df = pd.DataFrame()
     df["datetime"] = timestamps[:gen.shape[0]]
     df["radarPCD"] = binFileFrame
+    df["doppler"] = binFiledoppler
+    df["snr"] = binFilesnr
+    df["range"] = binFilerange
+    df["angle"] = binFileangle
+    df["power"] = binFilepower
     df['datetime'] = pd.to_datetime(df['datetime'], format='%Y-%m-%d %H_%M_%S.%f')
 
     # Save CSV

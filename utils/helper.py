@@ -195,6 +195,7 @@ def generate_pcd_time(filename, info_dict, fixedPoint = False,fixedPointVal=1000
     frameID = 0
     pcd_datas = []
     time_frames = []
+    powerProfileValues = []
     start_time = filename.split('/')[-1].split('.')[0].split('drone_')[-1][:19]
     start_time_obj = datetime.strptime(start_time,'%Y-%m-%d_%H_%M_%S')
     for adc_data in all_data:
@@ -202,7 +203,7 @@ def generate_pcd_time(filename, info_dict, fixedPoint = False,fixedPointVal=1000
         time_frames.append(time_current.strftime('%Y-%m-%d %H_%M_%S.%f'))
         frameID+=1
         radar_cube = dsp.range_processing(adc_data)
-        mean = radar_cube.mean(0)                 
+        mean = radar_cube.mean(0)
         radar_cube = radar_cube - mean  
         # --- capon beamforming
         beamWeights   = np.zeros((cfg.VIRT_ANT, cfg.ADC_SAMPLES), dtype=np.complex128)
@@ -251,6 +252,9 @@ def generate_pcd_time(filename, info_dict, fixedPoint = False,fixedPointVal=1000
         dopplerFFTInput = radar_cube[:, :, ranges]
         beamWeights  = beamWeights[:, ranges]
 
+        powerProfile = np.sum(np.abs(radar_cube) ** 2, axis=(0, 1))  
+        powerProfile  = powerProfile[ranges]
+
         # --- estimate doppler values
         # For each detected object and for each chirp combine the signals from 4 Rx, i.e.
         # For each detected object, matmul (numChirpsPerFrame, numRxAnt) with (numRxAnt) to (numChirpsPerFrame)
@@ -268,11 +272,16 @@ def generate_pcd_time(filename, info_dict, fixedPoint = False,fixedPointVal=1000
         azimuths = (azimuths - (cfg.NUM_ANGLE_BINS // 2)) * (np.pi / 180)
         dopplers = dopplerEst * cfg.DOPPLER_RESOLUTION
         snrs = snrs
+        # print(f"ranges: {ranges.shape}, azimuths: {azimuths.shape}, dopplers: {dopplers.shape}, snrs: {snrs.shape}, powerProfile: {powerProfile.shape}")
         
+        # print(powerProfile)
+        # powerProfileValues.append(powerProfile)
+
         # --- put into EKF
-        tracker.update_point_cloud(ranges, azimuths, dopplers, snrs)
+        tracker.update_point_cloud(ranges, azimuths, dopplers, snrs, powerProfile)
         targetDescr, tNum = tracker.step()
-        frame_pcd = np.zeros((len(tracker.point_cloud),6))
+        # frame_pcd = np.zeros((len(tracker.point_cloud),6))
+        frame_pcd = np.zeros((len(tracker.point_cloud),7))
         for point_cloud, idx in zip(tracker.point_cloud, range(len(tracker.point_cloud))):
             frame_pcd[idx,0] = -np.sin(point_cloud.angle) * point_cloud.range
             frame_pcd[idx,1] = np.cos(point_cloud.angle) * point_cloud.range
@@ -280,12 +289,11 @@ def generate_pcd_time(filename, info_dict, fixedPoint = False,fixedPointVal=1000
             frame_pcd[idx,3] = point_cloud.snr
             frame_pcd[idx,4] = point_cloud.range
             frame_pcd[idx,5] = point_cloud.angle
+            frame_pcd[idx,6] = point_cloud.power
 
         if fixedPoint:
             frame_pcd = reg_data(frame_pcd,fixedPointVal)
             
         pcd_datas.append(frame_pcd)
-
     pointcloud = np.array(pcd_datas)
-    
-    return pointcloud, time_frames
+    return pointcloud, time_frames#, powerProfileValues

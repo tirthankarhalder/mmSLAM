@@ -159,9 +159,9 @@ if __name__ == '__main__':
     valid_dataset = DatasetDrone(processedDataFolder_name + 'droneData_Test', split='test')
     print(dataset[0])
 
-    train_data_loader = DataLoader(dataset,batch_size=64, follow_batch=['y', 'x'],shuffle=True,drop_last=True)
-    test_data_loader = DataLoader(valid_dataset, batch_size=4, follow_batch=['y', 'x'],shuffle=False,drop_last=False)
-    device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+    train_data_loader = DataLoader(dataset,batch_size=128, follow_batch=['y', 'x'],shuffle=True,drop_last=True)
+    test_data_loader = DataLoader(valid_dataset, batch_size=8, follow_batch=['y', 'x'],shuffle=False,drop_last=False)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     ## model training parameter
     g_learning_rate = 1e-4
