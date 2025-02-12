@@ -32,7 +32,7 @@ animations/
 *.pkl
 fig/
 dataX4/
-datasets copy
+datasets copy/
 dataRadar/
 datasets/
 HectorSlamX4/

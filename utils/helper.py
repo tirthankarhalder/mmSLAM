@@ -73,7 +73,7 @@ def frame_reshape(frames, NUM_FRAMES):
     return all_data
 
 def reg_data(data, pc_size):  #
-    pc_tmp = np.zeros((pc_size, 6), dtype=np.float32)
+    pc_tmp = np.zeros((pc_size, 7), dtype=np.float32)
     pc_no = data.shape[0]
     if pc_no < pc_size:
         fill_list = np.random.choice(pc_size, size=pc_no, replace=False)
