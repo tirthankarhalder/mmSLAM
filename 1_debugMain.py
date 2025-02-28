@@ -32,7 +32,7 @@ import stat
 
 def remove_readonly(func, path, _):
     """Change the permission of a file and retry removal."""
-    os.chmod(path, stat.S_IWRITE)  # Give write permission
+    os.chmod(path, stat.S_IWRITE)  
     func(path)
 
 def density_based_downsampling(pcd, target_num_points,voxelSize):
@@ -124,6 +124,7 @@ if __name__ == "__main__":
     try:
         #defining the folder to strore the for every session 
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        print("timestamp: ", timestamp)
         processedDataFolder_name = f"./processedData/{timestamp}/"
         depVis = processedDataFolder_name + "visualization/depth/"
         radVis = processedDataFolder_name + "visualization/radar/"
@@ -230,7 +231,7 @@ if __name__ == "__main__":
         visulization = True
         target_num_points = 3072
 
-        if visulization:
+        if False:
             for index, row in tqdm(mergerdPcdDepth.iterrows(), total=len(mergerdPcdDepth), desc="Processing frames"):
                 sns.set(style="whitegrid")
                 fig1 = plt.figure(figsize=(12,7))
@@ -271,7 +272,7 @@ if __name__ == "__main__":
         pointcloudRadarDepth = mergerdPcdDepth
         pointcloudRadarDepth.reset_index(drop=True, inplace=True)
 
-        if doDownSampling:
+        if False:
 
             pointcloudRadarDepth["sampleDepth"] = None
             if randomDownSample:
@@ -296,7 +297,7 @@ if __name__ == "__main__":
             pointcloudRadarDepth.to_pickle(processedDataFolder_name + "pointcloudRadarDepth.pkl")
             print("Down Samling Done, pointcloudRadarDepth.pkl Exported")
         else:
-            pointcloudRadarDepth = pd.read_pickle(processedDataFolder_name + "pointcloudRadarDepth.pkl")
+            # pointcloudRadarDepth = pd.read_pickle(processedDataFolder_name + "pointcloudRadarDepth.pkl")
             print("Existing Down Sampled file imported")
 
 
@@ -360,7 +361,7 @@ if __name__ == "__main__":
         df = pd.read_pickle(pkl_file)
         df.reset_index(drop=True, inplace=True)
 
-        if not all(col in df.columns for col in ['radarPCD', 'depthPCD', 'datetime']):
+        if not all(col in df.columns for col in ['radarPCD', 'depthPCD', 'datetime','power']):
             raise ValueError("PKL file must contain 'radarPCD', 'depthPCD', and 'datetime' columns.")
 
 
@@ -381,7 +382,8 @@ if __name__ == "__main__":
                 savemat(mat_file_path, {
                     'radarPCD': row['radarPCD'],
                     'depthPCD': row['depthPCD'],
-                    'datetime': row['datetime']
+                    'datetime': row['datetime'],
+                    'power': row['power']
                 })
                 train_out.write(mat_file_path + "\n")
 
@@ -393,7 +395,8 @@ if __name__ == "__main__":
                 savemat(mat_file_path, {
                     'radarPCD': row['radarPCD'],
                     'depthPCD': row['depthPCD'],
-                    'datetime': row['datetime']
+                    'datetime': row['datetime'],
+                    'power': row['power']
                 })
                 test_out.write(mat_file_path + "\n")
 
@@ -404,8 +407,8 @@ if __name__ == "__main__":
     finally:
         ans = input("Do you want keep the data? (yes/no)")
         if ans == "no":
-            if os.path.exists(processedDataFolder_name):
-                shutil.rmtree(datasetsFolderPath, onerror=remove_readonly)
+            try:
+                subprocess.run(["rm", "-rf", processedDataFolder_name], check=True)
                 print(f"Directory '{processedDataFolder_name}' removed successfully.")
-            else:
-                print(f"Directory '{processedDataFolder_name}' does not exist.")
+            except subprocess.CalledProcessError as e:
+                print(f"Error removing directory: {e}")
