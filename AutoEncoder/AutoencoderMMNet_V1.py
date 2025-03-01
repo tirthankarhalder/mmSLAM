@@ -352,13 +352,13 @@ class PointDecoderDoppler(torch.nn.Module):
 
 
 
-class DownsampleModel(nn.Module):
+class DownsamplePoints(nn.Module):
     def __init__(self, num_input_points=16384, num_output_points=1024):
-        super(DownsampleModel, self).__init__()
+        super(DownsamplePoints, self).__init__()
         self.num_input_points = num_input_points
         self.num_output_points = num_output_points
         # Downsampling layer for pd_points
-        self.pd_downsample = nn.Conv1d(in_channels=3, out_channels=3, kernel_size=512, stride=2)
+        self.pd_points_downsample = nn.Conv1d(in_channels=3, out_channels=3, kernel_size=512, stride=2)
 
         self.fc = nn.Linear(1601 * 3, 1024 * 3)
 
@@ -370,16 +370,16 @@ class DownsampleModel(nn.Module):
         """
         batch_size = pd_points.shape[0]
         print("Batch Size: ", batch_size)
-        print("Inside Downsample: ", "Before pd_downsample pd_points.shape: ", pd_points.shape)
+        print("Inside Downsample: ", "Before pd_points_downsample pd_points.shape: ", pd_points.shape)
         pd_points = pd_points.permute(0, 2, 1)
         print("Inside Downsample: ", "After permute_1 pd_points.shape: ", pd_points.shape)
 
-        pd_points = self.pd_downsample(pd_points)
-        print("Inside Downsample: ", "After pd_downsample_1 pd_points.shape: ", pd_points.shape)
-        pd_points = self.pd_downsample(pd_points)
-        print("Inside Downsample: ", "After pd_downsample_2 pd_points.shape: ", pd_points.shape)
-        pd_points = self.pd_downsample(pd_points)
-        print("Inside Downsample: ", "After pd_downsample_3 pd_points.shape: ", pd_points.shape)
+        pd_points = self.pd_points_downsample(pd_points)
+        print("Inside Downsample: ", "After pd_points_downsample_1 pd_points.shape: ", pd_points.shape)
+        pd_points = self.pd_points_downsample(pd_points)
+        print("Inside Downsample: ", "After pd_points_downsample_2 pd_points.shape: ", pd_points.shape)
+        pd_points = self.pd_points_downsample(pd_points)
+        print("Inside Downsample: ", "After pd_points_downsample_3 pd_points.shape: ", pd_points.shape)
 
         pd_points = pd_points.view(batch_size, -1)
         print("Inside Downsample: ", "After multiplication axis 3 pd_points.shape: ", pd_points.shape)
@@ -396,6 +396,54 @@ class DownsampleModel(nn.Module):
 
 
         return score, pd_points, ini_points  
+    
+    
+class DownsampleDoppler(nn.Module):
+    def __init__(self, num_input_points=16384, num_output_points=1024):
+        super(DownsampleDoppler, self).__init__()
+        self.num_input_points = num_input_points
+        self.num_output_points = num_output_points
+        # Downsampling layer for pd_points
+        self.pd_Doppler_downsample = nn.Conv1d(in_channels=1, out_channels=1, kernel_size=512, stride=2)
+
+        self.fc = nn.Linear(1601 * 1, 1024 * 1)
+
+    def forward(self, score, pd_Doppler, ini_points):
+        """
+        score: [16384, 1]
+        pd_Doppler: [16, 16384, 1]
+        ini_points: [16, 64, 3] (unchanged)
+        """
+        batch_size = pd_Doppler.shape[0]
+        print("Batch Size: ", batch_size)
+        print("Inside Downsample: ", "Before pd_Doppler_downsample pd_Doppler.shape: ", pd_Doppler.shape)
+        pd_Doppler = pd_Doppler.permute(0, 2, 1)
+        print("Inside Downsample: ", "After permute_1 pd_Doppler.shape: ", pd_Doppler.shape)
+
+        pd_Doppler = self.pd_Doppler_downsample(pd_Doppler)
+        print("Inside Downsample: ", "After pd_Doppler_downsample_1 pd_Doppler.shape: ", pd_Doppler.shape)
+        pd_Doppler = self.pd_Doppler_downsample(pd_Doppler)
+        print("Inside Downsample: ", "After pd_Doppler_downsample_2 pd_Doppler.shape: ", pd_Doppler.shape)
+        pd_Doppler = self.pd_Doppler_downsample(pd_Doppler)
+        print("Inside Downsample: ", "After pd_Doppler_downsample_3 pd_Doppler.shape: ", pd_Doppler.shape)
+
+        pd_Doppler = pd_Doppler.view(batch_size, -1)
+        print("Inside Downsample: ", "After multiplication axis 3 pd_Doppler.shape: ", pd_Doppler.shape)
+
+        pd_Doppler = self.fc(pd_Doppler)  # [16, 1024 * 3]
+        print("Inside Downsample: ", "After dense layeer pd_Doppler.shape: ", pd_Doppler.shape)
+
+        pd_Doppler = pd_Doppler.view(batch_size, 1, 1024)
+        print("Inside Downsample: ", "After final reshape pd_Doppler.shape: ", pd_Doppler.shape)
+
+
+        pd_Doppler = pd_Doppler.permute(0, 2, 1)
+        print("Inside Downsample: ", "After permute_2 pd_Doppler.shape: ", pd_Doppler.shape)
+
+
+        return score, pd_Doppler, ini_points  
+    
+
 class Autoencoder(nn.Module):
     def __init__(self):
         super(Autoencoder, self).__init__()
@@ -413,7 +461,8 @@ class Autoencoder(nn.Module):
         # self.encoder2 = PointEncoder(downscale=4)
         # self.encoder = PointEncoder(downscale=8)
 
-        self.downsample = DownsampleModel()
+        self.pdPointsDownsample = DownsamplePoints()
+        self.pdDopplerDownsample = DownsampleDoppler()
 
     def forward(self,x_ini, x_pos, x_pi):
 
@@ -472,13 +521,17 @@ class Autoencoder(nn.Module):
         #ini_points = init_point.view(batch_num,-1,3)
         ini_points = init_point.permute(0, 2, 1).contiguous()
         pd_points = pd_point.permute(0, 2, 1).contiguous()
+        pd_doppler = pd_doppler.permute(0, 2, 1).contiguous()
 
         print("After Permute: ", "score.shape: ", score.shape, "pd_points: ", pd_points.shape, "ini_points: ", ini_points.shape)
 
-        scoreEncoded,pd_pointsEncoded,ini_pointsEncoded = self.downsample(score,pd_points,ini_points)
-        print("After Downsample: ", "scoreEncoded.shape: ",scoreEncoded.shape, "pd_pointsEncoded: ", pd_pointsEncoded.shape, "ini_pointsEncoded: ", ini_pointsEncoded.shape)
-
-        return score,ini_points,pd_points,pd_doppler,scoreEncoded,pd_pointsEncoded,ini_pointsEncoded
+        scoreEncoded,pd_pointsEncoded,ini_pointsEncoded = self.pdPointsDownsample(score,pd_points,ini_points)
+        print("After pdPointsDownsample: ", "scoreEncoded.shape: ",scoreEncoded.shape, "pd_pointsEncoded: ", pd_pointsEncoded.shape, "ini_pointsEncoded: ", ini_pointsEncoded.shape)
+        print("===============================================================")
+        scoreEncoded,pd_DopplerEncoded,ini_pointsEncoded = self.pdDopplerDownsample(score,pd_doppler,ini_points)
+        print("After pdPointsDownsample: ", "scoreEncoded.shape: ",scoreEncoded.shape, "pd_DopplerEncoded: ", pd_DopplerEncoded.shape, "ini_pointsEncoded: ", ini_pointsEncoded.shape)
+        
+        return score,ini_points,pd_points,pd_doppler,scoreEncoded,pd_pointsEncoded,pd_DopplerEncoded,ini_pointsEncoded
 
         
 if __name__ == '__main__':

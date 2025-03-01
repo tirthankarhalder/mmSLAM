@@ -86,7 +86,7 @@ def train():
                         depth=3
                     ))
             print(f"Model summary saved to {summary_file_path}")
-            score,init,pred,scoreEncoded,pd_pointsEncoded,ini_pointsEncoded = G(x_ini,x_pos,data.x_batch)
+            score,init,pred,predDoppler,scoreEncoded,pd_pointsEncoded,pd_DopplerEncoded,ini_pointsEncoded = G(x_ini,x_pos,data.x_batch)
             dist1, dist2, idx1, idx2 = ChD(pred.view(batch_size,-1,3), gt_pcd.view(batch_size,-1,3))  # Train G 
             dist3, dist4, idx1, idx2 = ChD(init.view(batch_size,-1,3), gt_pcd.view(batch_size,-1,3))  # Train G 
             dist5, dist6, idx3, idx4 = ChD(x_pos.view(batch_size,-1,3), gt_pcd.view(batch_size,-1,3))  # Train G 

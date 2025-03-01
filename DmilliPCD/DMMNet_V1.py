@@ -472,13 +472,13 @@ class Autoencoder(nn.Module):
         #ini_points = init_point.view(batch_num,-1,3)
         ini_points = init_point.permute(0, 2, 1).contiguous()
         pd_points = pd_point.permute(0, 2, 1).contiguous()
-
+        pd_doppler = pd_doppler.permute(0, 2, 1).contiguous()
         print("After Permute: ", "score.shape: ", score.shape, "pd_points: ", pd_points.shape, "ini_points: ", ini_points.shape)
 
-        scoreEncoded,pd_pointsEncoded,ini_pointsEncoded = self.downsample(score,pd_points,ini_points)
-        print("After Downsample: ", "scoreEncoded.shape: ",scoreEncoded.shape, "pd_pointsEncoded: ", pd_pointsEncoded.shape, "ini_pointsEncoded: ", ini_pointsEncoded.shape)
+        # scoreEncoded,pd_pointsEncoded,ini_pointsEncoded = self.downsample(score,pd_points,ini_points)
+        # print("After Downsample: ", "scoreEncoded.shape: ",scoreEncoded.shape, "pd_pointsEncoded: ", pd_pointsEncoded.shape, "ini_pointsEncoded: ", ini_pointsEncoded.shape)
 
-        return score,ini_points,pd_points,pd_doppler,scoreEncoded,pd_pointsEncoded,ini_pointsEncoded
+        return score,ini_points,pd_points,pd_doppler#,scoreEncoded,pd_pointsEncoded,ini_pointsEncoded
 
         
 if __name__ == '__main__':
@@ -492,7 +492,7 @@ if __name__ == '__main__':
     x_batch = torch.randint(0, 64, (65536,)).to(device)
     input_shapes = (x_ini, x_pos, x_batch)
 
-    summary_file_path = "model_summaryAutoencoder.txt"
+    summary_file_path = "dMilliPCDSummary.txt"
 
     with open(summary_file_path, "w") as f:
         with redirect_stdout(f):
