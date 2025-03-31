@@ -60,7 +60,7 @@ header = ["filename"," Nf","n_chirps","tc","adc_samples","sampling_rate","period
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='parser for params')
     parser.add_argument('-nf', '--nframes', type=int, default= 500,help='Number of frames')
-    parser.add_argument('-nc', '--nchirps', type=int, default= 182,help='Number of chirps in a frame, usually 182')
+    parser.add_argument('-nc', '--nchirps', type=int, default= 128,help='Number of chirps in a frame, usually 182')
     parser.add_argument('-tc', '--timechirp', type=int, default=72,help='Chrip time is microseconds, usually 72')
     parser.add_argument('-s', '--samples', type=int, default= 256,help='Number of ADC samples, or range bins, usually 256')
     parser.add_argument('-r', '--rate', type=int,default=4400, help='Sampling rate, usually 4400')

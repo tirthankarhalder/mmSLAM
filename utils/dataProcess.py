@@ -71,7 +71,7 @@ def process_frames(frameSPerFile, file):
 
 def load_and_process_file(file):
     """Load data from the PKL file, process it, and return the frames and timestamps."""
-    datasetsFolderPath = './datasets/'
+    datasetsFolderPath = './datasetsFull/'
     depthFilePath = os.path.join(datasetsFolderPath,"depth_data/")
     frameSPerFile = []
     try:

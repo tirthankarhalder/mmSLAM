@@ -15,13 +15,14 @@ from datetime import datetime,timedelta
 from mmwave.dataloader import DCA1000
 import mmwave.dsp as dsp
 from mmwave.tracking import EKF
-
+from mmwave.dsp.doppler_processing import separate_tx
 
 # def read8byte(x):
 #     return struct.unpack('<hhhh', x)
 
 def get_info(args):
-    dataset=pd.read_csv('./datasets/dataset.csv')
+    datasetCSVPath = "/".join(args.split("/")[:-2])
+    dataset=pd.read_csv(datasetCSVPath + '/dataset.csv')
     # print(dataset)
     file_name=args
     file_name = file_name.split("/")[3]
@@ -45,8 +46,10 @@ def print_info(info_dict):
     print('***************************************************************')
 
 
-def run_data_read_only_sensor(info_dict):
-    filename = './datasets/radar_data/'+info_dict["filename"][0]
+def run_data_read_only_sensor(args, info_dict):
+    datasetCSVPath = "/".join(args.split("/")[:-1])
+
+    filename = datasetCSVPath + '/'+info_dict["filename"][0]
     # filename = info_dict["filename"][0]
     command =f'python data_read_only_sensor.py {filename} {info_dict[" Nf"][0]}'
     try:
@@ -100,6 +103,8 @@ def generate_pcd(filename, info_dict):
     for adc_data in all_data:
         count+=1
         radar_cube = dsp.range_processing(adc_data)
+        # det_matrix, aoa_input = dsp.doppler_processing(radar_cube, num_tx_antennas=3, clutter_removal_enabled=True, window_type_2d=Window.HAMMING)
+
         mean = radar_cube.mean(0)                 
         radar_cube = radar_cube - mean  
         # --- capon beamforming
@@ -195,6 +200,10 @@ def generate_pcd_time(filename, info_dict, fixedPoint = False,fixedPointVal=1000
     frameID = 0
     pcd_datas = []
     time_frames = []
+    rangeResult = []
+    dopplerResult = []
+    rangeAzimuthzResult = []
+    rawHeatmap = []
     powerProfileValues = []
     start_time = filename.split('/')[-1].split('.')[0].split('drone_')[-1][:19]
     start_time_obj = datetime.strptime(start_time,'%Y-%m-%d_%H_%M_%S')
@@ -205,6 +214,13 @@ def generate_pcd_time(filename, info_dict, fixedPoint = False,fixedPointVal=1000
         radar_cube = dsp.range_processing(adc_data)
         mean = radar_cube.mean(0)
         radar_cube = radar_cube - mean  
+        rangeResult.append(radar_cube)
+        separate_tx_radar_cube = separate_tx(radar_cube,3,1,0)
+        doppler_fft_value = np.fft.fft(separate_tx_radar_cube, axis=0)
+        doppler_fft_value = np.fft.fftshift(doppler_fft_value, axes=0)
+        doppler_fft_value = np.abs(doppler_fft_value.sum(axis=1))
+        doppler_fft_value_scaled = (doppler_fft_value-np.min(doppler_fft_value))/(np.max(doppler_fft_value)-np.min(doppler_fft_value))
+        dopplerResult.append(doppler_fft_value_scaled)
         # --- capon beamforming
         beamWeights   = np.zeros((cfg.VIRT_ANT, cfg.ADC_SAMPLES), dtype=np.complex128)
         radar_cube = np.concatenate((radar_cube[0::3,...], radar_cube[1::3,...], radar_cube[2::3,...]), axis=1)
@@ -272,6 +288,7 @@ def generate_pcd_time(filename, info_dict, fixedPoint = False,fixedPointVal=1000
         azimuths = (azimuths - (cfg.NUM_ANGLE_BINS // 2)) * (np.pi / 180)
         dopplers = dopplerEst * cfg.DOPPLER_RESOLUTION
         snrs = snrs
+        rangeAzimuthzResult.append([ranges,azimuths])
         # print(f"ranges: {ranges.shape}, azimuths: {azimuths.shape}, dopplers: {dopplers.shape}, snrs: {snrs.shape}, powerProfile: {powerProfile.shape}")
         
         # print(powerProfile)
@@ -295,5 +312,7 @@ def generate_pcd_time(filename, info_dict, fixedPoint = False,fixedPointVal=1000
             frame_pcd = reg_data(frame_pcd,fixedPointVal)
             
         pcd_datas.append(frame_pcd)
+        rawHeatmap.append(heatmap_log)
     pointcloud = np.array(pcd_datas)
-    return pointcloud, time_frames#, powerProfileValues
+   
+    return pointcloud, time_frames, dopplerResult, rangeResult, rangeAzimuthzResult,rawHeatmap #, powerProfileValues

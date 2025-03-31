@@ -12,7 +12,7 @@ from scipy.io import savemat, loadmat
 import torch
 import open3d
 import numpy as np
-
+os.chdir("/app")
 from dataclasses import dataclass
 
 ## IMPORTANT only for python version > 3.7
@@ -124,7 +124,7 @@ def get_all_item(scene_list,data_path):
         in_cloud = ini_pt[b_idx,:]
 
         powerProfile = mat['power']
-        b_idx = np.random.choice(powerProfile.shape[1],1024,replace=True)
+        # b_idx = np.random.choice(powerProfile.shape[1],1024,replace=True)
         powerProfile = powerProfile[:,b_idx]
 
         # ini_pos = mat['ini_pose']

@@ -7,7 +7,8 @@ open3d==0.14.1
 setuptools==52.0.0
 torchsummary==1.5.1
 torchinfo
-seaborn
+seaborn==0.13.2
+tensorboard-plugin-profile
 #torch-tb-profiler-0.4.3
 
 

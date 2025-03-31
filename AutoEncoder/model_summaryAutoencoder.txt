@@ -112,28 +112,18 @@ After Doppler Decoder3_2: pd_doppler.shape: torch.Size([64, 1, 16384]), ini_dopp
 ===============================================================
 After Permute:  score.shape:  torch.Size([65536, 1]) pd_points:  torch.Size([64, 16384, 3]) ini_points:  torch.Size([64, 64, 3])
 Batch Size:  64
-Inside Downsample:  Before pd_points_downsample pd_points.shape:  torch.Size([64, 16384, 3])
-Inside Downsample:  After permute_1 pd_points.shape:  torch.Size([64, 3, 16384])
-Inside Downsample:  After pd_points_downsample_1 pd_points.shape:  torch.Size([64, 3, 7937])
-Inside Downsample:  After pd_points_downsample_2 pd_points.shape:  torch.Size([64, 3, 3713])
-Inside Downsample:  After pd_points_downsample_3 pd_points.shape:  torch.Size([64, 3, 1601])
-Inside Downsample:  After multiplication axis 3 pd_points.shape:  torch.Size([64, 4803])
-Inside Downsample:  After dense layeer pd_points.shape:  torch.Size([64, 3072])
-Inside Downsample:  After final reshape pd_points.shape:  torch.Size([64, 3, 1024])
-Inside Downsample:  After permute_2 pd_points.shape:  torch.Size([64, 1024, 3])
-After pdPointsDownsample:  scoreEncoded.shape:  torch.Size([65536, 1]) pd_pointsEncoded:  torch.Size([64, 1024, 3]) ini_pointsEncoded:  torch.Size([64, 64, 3])
+Inside Downsample:  Before pd_points_downsample pd_points.shape:  torch.Size([64, 16384, 4])
+Inside Downsample:  After permute_1 pd_points.shape:  torch.Size([64, 4, 16384])
+Inside Downsample:  After pd_points_downsample_1 pd_points.shape:  torch.Size([64, 4, 7937])
+Inside Downsample:  After pd_points_downsample_2 pd_points.shape:  torch.Size([64, 4, 3713])
+Inside Downsample:  After pd_points_downsample_3 pd_points.shape:  torch.Size([64, 4, 1601])
+Inside Downsample:  After multiplication axis 3 pd_points.shape:  torch.Size([64, 6404])
+Inside Downsample:  After dense layer pd_points.shape:  torch.Size([64, 4096])
+Inside Downsample:  After final reshape pd_points.shape:  torch.Size([64, 4, 1024])
+Inside Downsample:  After permute_2 pd_points.shape:  torch.Size([64, 1024, 4])
+After pdPointsDownsample:  scoreEncoded.shape:  torch.Size([65536, 1]) pd_pointspowerEncoded:  torch.Size([64, 1024, 4]) ini_pointspowerEncoded:  torch.Size([64, 64, 3])
 ===============================================================
-Batch Size:  64
-Inside Downsample:  Before pd_Doppler_downsample pd_Doppler.shape:  torch.Size([64, 16384, 1])
-Inside Downsample:  After permute_1 pd_Doppler.shape:  torch.Size([64, 1, 16384])
-Inside Downsample:  After pd_Doppler_downsample_1 pd_Doppler.shape:  torch.Size([64, 1, 7937])
-Inside Downsample:  After pd_Doppler_downsample_2 pd_Doppler.shape:  torch.Size([64, 1, 3713])
-Inside Downsample:  After pd_Doppler_downsample_3 pd_Doppler.shape:  torch.Size([64, 1, 1601])
-Inside Downsample:  After multiplication axis 3 pd_Doppler.shape:  torch.Size([64, 1601])
-Inside Downsample:  After dense layeer pd_Doppler.shape:  torch.Size([64, 1024])
-Inside Downsample:  After final reshape pd_Doppler.shape:  torch.Size([64, 1, 1024])
-Inside Downsample:  After permute_2 pd_Doppler.shape:  torch.Size([64, 1024, 1])
-After pdPointsDownsample:  scoreEncoded.shape:  torch.Size([65536, 1]) pd_DopplerEncoded:  torch.Size([64, 1024, 1]) ini_pointsEncoded:  torch.Size([64, 64, 3])
+After pdDopplerDownsample:  pd_pointsEncoded.shape: torch.Size([64, 1024, 3]) pd_DopplerEncoded:  torch.Size([64, 1024, 1]) ini_pointsEncoded:  torch.Size([64, 64, 3])
 =================================================================================================================================================
 Layer (type:depth-idx)                        Input Shape               Output Shape              Param #                   Trainable
 =================================================================================================================================================
@@ -152,12 +142,12 @@ Autoencoder                                   [64, 1024]                [65536, 
 │    │    └─Linear: 3-8                       [65536, 64]               [65536, 1]                65                        True
 │    └─Sigmoid: 2-4                           [65536, 1]                [65536, 1]                --                        --
 ├─MMGraphExtractor: 1-2                       [65536, 576]              [64, 512]                 --                        True
-│    └─PointNetPP: 2-5                        [65536, 1]                [16411, 256]              --                        True
-│    │    └─PointNetConv: 3-9                 [65536, 1]                [16411, 256]              16,960                    True
-│    └─PointNetPP: 2-6                        [16411, 256]              [4131, 384]               --                        True
-│    │    └─PointNetConv: 3-10                [16411, 256]              [4131, 384]               165,248                   True
-│    └─GlobalPool: 2-7                        [4131, 384]               [64, 512]                 --                        True
-│    │    └─Sequential: 3-11                  [4131, 387]               [4131, 512]               346,112                   True
+│    └─PointNetPP: 2-5                        [65536, 1]                [16412, 256]              --                        True
+│    │    └─PointNetConv: 3-9                 [65536, 1]                [16412, 256]              16,960                    True
+│    └─PointNetPP: 2-6                        [16412, 256]              [4126, 384]               --                        True
+│    │    └─PointNetConv: 3-10                [16412, 256]              [4126, 384]               165,248                   True
+│    └─GlobalPool: 2-7                        [4126, 384]               [64, 512]                 --                        True
+│    │    └─Sequential: 3-11                  [4126, 387]               [4126, 512]               346,112                   True
 ├─SeedGenerator: 1-3                          [64, 512, 1]              [64, 3, 64]               --                        True
 │    └─ConvTranspose1d: 2-8                   [64, 512, 1]              [64, 128, 64]             4,194,432                 True
 │    └─MLP_CONV: 2-9                          [64, 640, 64]             [64, 128, 64]             --                        True
@@ -213,26 +203,21 @@ Autoencoder                                   [64, 1024]                [65536, 
 │    └─ConvTranspose1d: 2-30                  [64, 128, 2048]           [64, 128, 16384]          131,072                   True
 │    └─MLP_CONV: 2-31                         [64, 128, 16384]          [64, 1, 16384]            --                        True
 │    │    └─Sequential: 3-36                  [64, 128, 16384]          [64, 1, 16384]            8,321                     True
-├─DownsamplePoints: 1-9                       [65536, 1]                [65536, 1]                --                        True
-│    └─Conv1d: 2-32                           [64, 3, 16384]            [64, 3, 7937]             4,611                     True
-│    └─Conv1d: 2-33                           [64, 3, 7937]             [64, 3, 3713]             (recursive)               True
-│    └─Conv1d: 2-34                           [64, 3, 3713]             [64, 3, 1601]             (recursive)               True
-│    └─Linear: 2-35                           [64, 4803]                [64, 3072]                14,757,888                True
-├─DownsampleDoppler: 1-10                     [65536, 1]                [65536, 1]                --                        True
-│    └─Conv1d: 2-36                           [64, 1, 16384]            [64, 1, 7937]             513                       True
-│    └─Conv1d: 2-37                           [64, 1, 7937]             [64, 1, 3713]             (recursive)               True
-│    └─Conv1d: 2-38                           [64, 1, 3713]             [64, 1, 1601]             (recursive)               True
-│    └─Linear: 2-39                           [64, 1601]                [64, 1024]                1,640,448                 True
+├─DownsamplePointsPower: 1-9                  [65536, 1]                [65536, 1]                --                        True
+│    └─Conv1d: 2-32                           [64, 4, 16384]            [64, 4, 7937]             8,196                     True
+│    └─Conv1d: 2-33                           [64, 4, 7937]             [64, 4, 3713]             (recursive)               True
+│    └─Conv1d: 2-34                           [64, 4, 3713]             [64, 4, 1601]             (recursive)               True
+│    └─Linear: 2-35                           [64, 6404]                [64, 4096]                26,234,880                True
 =================================================================================================================================================
-Total params: 22,771,824
-Trainable params: 22,771,824
+Total params: 32,611,440
+Trainable params: 32,611,440
 Non-trainable params: 0
-Total mult-adds (G): 484.21
+Total mult-adds (G): 492.88
 =================================================================================================================================================
 Input size (MB): 1.57
-Forward/backward pass size (MB): 13378.66
-Params size (MB): 91.09
-Estimated Total Size (MB): 13471.32
+Forward/backward pass size (MB): 13580.69
+Params size (MB): 130.45
+Estimated Total Size (MB): 13712.71
 =================================================================================================================================================
 =================================================================================================================================================
 Layer (type:depth-idx)                        Input Shape               Output Shape              Param #                   Trainable
@@ -252,12 +237,12 @@ Autoencoder                                   [64, 1024]                [65536, 
 │    │    └─Linear: 3-8                       [65536, 64]               [65536, 1]                65                        True
 │    └─Sigmoid: 2-4                           [65536, 1]                [65536, 1]                --                        --
 ├─MMGraphExtractor: 1-2                       [65536, 576]              [64, 512]                 --                        True
-│    └─PointNetPP: 2-5                        [65536, 1]                [16411, 256]              --                        True
-│    │    └─PointNetConv: 3-9                 [65536, 1]                [16411, 256]              16,960                    True
-│    └─PointNetPP: 2-6                        [16411, 256]              [4131, 384]               --                        True
-│    │    └─PointNetConv: 3-10                [16411, 256]              [4131, 384]               165,248                   True
-│    └─GlobalPool: 2-7                        [4131, 384]               [64, 512]                 --                        True
-│    │    └─Sequential: 3-11                  [4131, 387]               [4131, 512]               346,112                   True
+│    └─PointNetPP: 2-5                        [65536, 1]                [16412, 256]              --                        True
+│    │    └─PointNetConv: 3-9                 [65536, 1]                [16412, 256]              16,960                    True
+│    └─PointNetPP: 2-6                        [16412, 256]              [4126, 384]               --                        True
+│    │    └─PointNetConv: 3-10                [16412, 256]              [4126, 384]               165,248                   True
+│    └─GlobalPool: 2-7                        [4126, 384]               [64, 512]                 --                        True
+│    │    └─Sequential: 3-11                  [4126, 387]               [4126, 512]               346,112                   True
 ├─SeedGenerator: 1-3                          [64, 512, 1]              [64, 3, 64]               --                        True
 │    └─ConvTranspose1d: 2-8                   [64, 512, 1]              [64, 128, 64]             4,194,432                 True
 │    └─MLP_CONV: 2-9                          [64, 640, 64]             [64, 128, 64]             --                        True
@@ -313,24 +298,19 @@ Autoencoder                                   [64, 1024]                [65536, 
 │    └─ConvTranspose1d: 2-30                  [64, 128, 2048]           [64, 128, 16384]          131,072                   True
 │    └─MLP_CONV: 2-31                         [64, 128, 16384]          [64, 1, 16384]            --                        True
 │    │    └─Sequential: 3-36                  [64, 128, 16384]          [64, 1, 16384]            8,321                     True
-├─DownsamplePoints: 1-9                       [65536, 1]                [65536, 1]                --                        True
-│    └─Conv1d: 2-32                           [64, 3, 16384]            [64, 3, 7937]             4,611                     True
-│    └─Conv1d: 2-33                           [64, 3, 7937]             [64, 3, 3713]             (recursive)               True
-│    └─Conv1d: 2-34                           [64, 3, 3713]             [64, 3, 1601]             (recursive)               True
-│    └─Linear: 2-35                           [64, 4803]                [64, 3072]                14,757,888                True
-├─DownsampleDoppler: 1-10                     [65536, 1]                [65536, 1]                --                        True
-│    └─Conv1d: 2-36                           [64, 1, 16384]            [64, 1, 7937]             513                       True
-│    └─Conv1d: 2-37                           [64, 1, 7937]             [64, 1, 3713]             (recursive)               True
-│    └─Conv1d: 2-38                           [64, 1, 3713]             [64, 1, 1601]             (recursive)               True
-│    └─Linear: 2-39                           [64, 1601]                [64, 1024]                1,640,448                 True
+├─DownsamplePointsPower: 1-9                  [65536, 1]                [65536, 1]                --                        True
+│    └─Conv1d: 2-32                           [64, 4, 16384]            [64, 4, 7937]             8,196                     True
+│    └─Conv1d: 2-33                           [64, 4, 7937]             [64, 4, 3713]             (recursive)               True
+│    └─Conv1d: 2-34                           [64, 4, 3713]             [64, 4, 1601]             (recursive)               True
+│    └─Linear: 2-35                           [64, 6404]                [64, 4096]                26,234,880                True
 =================================================================================================================================================
-Total params: 22,771,824
-Trainable params: 22,771,824
+Total params: 32,611,440
+Trainable params: 32,611,440
 Non-trainable params: 0
-Total mult-adds (G): 484.21
+Total mult-adds (G): 492.88
 =================================================================================================================================================
 Input size (MB): 1.57
-Forward/backward pass size (MB): 13378.66
-Params size (MB): 91.09
-Estimated Total Size (MB): 13471.32
+Forward/backward pass size (MB): 13580.69
+Params size (MB): 130.45
+Estimated Total Size (MB): 13712.71
 =================================================================================================================================================

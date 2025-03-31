@@ -32,6 +32,7 @@ from torch.autograd import Variable
 from torchinfo import summary
 from contextlib import redirect_stdout
 
+device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 
 
 # ##### MODELS: Generator model and discriminator model
@@ -99,11 +100,11 @@ class DGCNN(torch.nn.Module):
         self.conv = DynamicEdgeConv(nn,k,aggr)
         self.activ = ReLU()
     def forward(self, x, pos, batch):
-        print(f"Inside DGCNN: Before conv: x.shape: {x.shape}, batch.shape: {batch.shape}")
+        # print(f"Inside DGCNN: Before conv: x.shape: {x.shape}, batch.shape: {batch.shape}")
         x = self.conv(x, batch)
-        print(f"Inside DGCNN: x.shape: {x.shape}, batch.shape: {batch.shape}")
+        # print(f"Inside DGCNN: x.shape: {x.shape}, batch.shape: {batch.shape}")
         x = self.activ(x)
-        print(f"Inside DGCNN: After activation x.shape: {x.shape}, batch.shape: {batch.shape}")
+        # print(f"Inside DGCNN: After activation x.shape: {x.shape}, batch.shape: {batch.shape}")
 
         return x
     
@@ -169,7 +170,12 @@ class NoiseScoreNet(torch.nn.Module):
 
     def forward(self, x, pos, batch):
         #print(x.size())
-        batch_num = torch.max(batch).item() + 1
+        """
+        TracerWarning: Converting a tensor to a Python number might cause the trace to be incorrect. We can't record the data flow of Python values, so this value will be treated as a constant in the future. This means that the trace might not generalize to other inputs!
+        batch_numNoise = torch.max(batch).item() + 1
+        """
+        # batch_numNoise = torch.max(batch).item() + 1
+        batch_numNoise = torch.max(batch) + 1
         #N = x.size(0)/batch_num
         #print(N)
         x1 = self.dg1(x, pos, batch)
@@ -229,10 +235,10 @@ class PointDecoder(torch.nn.Module):
         '''
         # local_fea: batch by 512 by 1
         B,C,N = pt.size()
-        print(f"Inside PointDecoder: pt:{pt.shape}, shapecode: {shapecode.shape}")
+        # print(f"Inside PointDecoder: pt:{pt.shape}, shapecode: {shapecode.shape}")
         #print(patch_encoded[1].size())
         shapecode = shapecode.view(B,-1,1).repeat(1,1,pt.size(2))
-        print(f"Inside PointDecoder: After view : pt:{pt.shape}, shapecode: {shapecode.shape}")
+        # print(f"Inside PointDecoder: After view : pt:{pt.shape}, shapecode: {shapecode.shape}")
 
         #print(pt.size())
         
@@ -240,44 +246,41 @@ class PointDecoder(torch.nn.Module):
         # flatten pt
         # pos: batch * number by 3
         pos = pt.permute(0,2,1).contiguous()
-        print(f"Inside PointDecoder: After permute: pos:{pos.shape}, shapecode: {shapecode.shape}")
+        # print(f"Inside PointDecoder: After permute: pos:{pos.shape}, shapecode: {shapecode.shape}")
         pos = pos.view(-1,3)
-        print(f"Inside PointDecoder: After view: pos:{pos.shape}, shapecode: {shapecode.shape}")
+        # print(f"Inside PointDecoder: After view: pos:{pos.shape}, shapecode: {shapecode.shape}")
 
         
             #build batch_index
         patch_vec = torch.arange(B,dtype=torch.int64).view(-1,1)
-        print(f"Inside PointDecoder: patch_vec.shape:{patch_vec.shape}, shapecode: {shapecode.shape}")
+        # print(f"Inside PointDecoder: patch_vec.shape:{patch_vec.shape}, shapecode: {shapecode.shape}")
 
         patch_vec = patch_vec.repeat(1,N)
-        print(f"Inside PointDecoder: After repeat: patch_vec.shape:{patch_vec.shape}, shapecode: {shapecode.shape}")
+        # print(f"Inside PointDecoder: After repeat: patch_vec.shape:{patch_vec.shape}, shapecode: {shapecode.shape}")
 
-        batch = patch_vec.view(-1).to('cuda')
-        print(f"Inside PointDecoder: After view: batch.shape:{batch.shape}, shapecode: {shapecode.shape}")
+        batch = patch_vec.view(-1).to(device)
+        # print(f"Inside PointDecoder: After view: batch.shape:{batch.shape}, shapecode: {shapecode.shape}")
 
         # dgfea = Batch * Number by 64
         dgfea = self.dg1(pos, pos, batch)
-        print(f"Inside PointDecoder: dg1: dgfea.shape:{dgfea.shape}, shapecode: {shapecode.shape}")
+        # print(f"Inside PointDecoder: dg1: dgfea.shape:{dgfea.shape}, shapecode: {shapecode.shape}")
 
         # rel_fea: Batch by 64 by Number
         rel_fea = dgfea.view(B,-1,64).permute(0,2,1)
-        print(f"Inside PointDecoder: After view: rel_fea.shape:{rel_fea.shape}, shapecode: {shapecode.shape}")
-
+        # print(f"Inside PointDecoder: After view: rel_fea.shape:{rel_fea.shape}, shapecode: {shapecode.shape}")
         point_fea = torch.cat((shapecode, rel_fea), -2)
-        print(f"Inside PointDecoder: After Cat: point_fea.shape:{point_fea.shape}, shapecode: {shapecode.shape}")
-
+        # print(f"Inside PointDecoder: After Cat: point_fea.shape:{point_fea.shape}, shapecode: {shapecode.shape}")
         x1 = self.mlp_1(point_fea) # B by 128 by N
-        print(f"Inside PointDecoder: mlp1: x1.shape:{x1.shape}, shapecode: {shapecode.shape}")
-
+        # print(f"Inside PointDecoder: mlp1: x1.shape:{x1.shape}, shapecode: {shapecode.shape}")
         x_expand = self.ps(x1) # B by 128 by N*upscale 
-        print(f"Inside PointDecoder: ConvTranspose: x_expand.shape:{x_expand.shape}, shapecode: {shapecode.shape}")
+        # print(f"Inside PointDecoder: ConvTranspose: x_expand.shape:{x_expand.shape}, shapecode: {shapecode.shape}")
         out = self.mlp_2(x_expand)  # B by 3 by N*upscale
-        print(f"Inside PointDecoder: mlp2: out.shape:{out.shape}, shapecode: {shapecode.shape}")
+        # print(f"Inside PointDecoder: mlp2: out.shape:{out.shape}, shapecode: {shapecode.shape}")
 
         out = out+torch.repeat_interleave(pt, self.upscale, dim=2)
         # rescale xyz for each patch
         #torch.sigmoid(out)
-        print(f"Inside PointDecoder: After Interleave: out.shape:{out.shape}, shapecode: {shapecode.shape}")
+        # print(f"Inside PointDecoder: After Interleave: out.shape:{out.shape}, shapecode: {shapecode.shape}")
 
         return out   
 class PointDecoderDoppler(torch.nn.Module):
@@ -296,71 +299,58 @@ class PointDecoderDoppler(torch.nn.Module):
         pt: points from previous layer
         fea: global_fea
         '''
+        # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         # local_fea: batch by 512 by 1
         B,C,N = pt.size()
-        print(f"Inside PointDecoderDoppler: pt:{pt.shape}, shapecode: {shapecode.shape}")
+        # print(f"Inside PointDecoderDoppler: pt:{pt.shape}, shapecode: {shapecode.shape}")
         #print(patch_encoded[1].size())
         shapecode = shapecode.view(B,-1,1).repeat(1,1,pt.size(2))
-        print(f"Inside PointDecoderDoppler: After view : pt:{pt.shape}, shapecode: {shapecode.shape}")
-
+        # print(f"Inside PointDecoderDoppler: After view : pt:{pt.shape}, shapecode: {shapecode.shape}")
         #print(pt.size())
-        
         # pt: Batch by 3 by Number
         # flatten pt
         # pos: batch * number by 3
         pos = pt.permute(0,2,1).contiguous()
-        print(f"Inside PointDecoderDoppler: After permute: pos:{pos.shape}, shapecode: {shapecode.shape}")
+        # print(f"Inside PointDecoderDoppler: After permute: pos:{pos.shape}, shapecode: {shapecode.shape}")
         pos = pos.view(-1,1)
-        print(f"Inside PointDecoderDoppler: After view: pos:{pos.shape}, shapecode: {shapecode.shape}")
-
-        
-        #build batch_index
+        # print(f"Inside PointDecoderDoppler: After view: pos:{pos.shape}, shapecode: {shapecode.shape}")        #build batch_index
         patch_vec = torch.arange(B,dtype=torch.int64).view(-1,1)
-        print(f"Inside PointDecoderDoppler: patch_vec.shape:{patch_vec.shape}, shapecode: {shapecode.shape}")
-
+        # print(f"Inside PointDecoderDoppler: patch_vec.shape:{patch_vec.shape}, shapecode: {shapecode.shape}")
         patch_vec = patch_vec.repeat(1,N)
-        print(f"Inside PointDecoderDoppler: After repeat: patch_vec.shape:{patch_vec.shape}, shapecode: {shapecode.shape}")
-
-        batch = patch_vec.view(-1).to('cuda')
-        print(f"Inside PointDecoderDoppler: After view: batch.shape:{batch.shape}, shapecode: {shapecode.shape}")
-
+        # print(f"Inside PointDecoderDoppler: After repeat: patch_vec.shape:{patch_vec.shape}, shapecode: {shapecode.shape}")
+        batch = patch_vec.view(-1).to(device)
+        # print(f"Inside PointDecoderDoppler: After view: batch.shape:{batch.shape}, shapecode: {shapecode.shape}")
         # dgfea = Batch * Number by 64
         dgfea = self.dg1(pos, pos, batch)
-        print(f"Inside PointDecoderDoppler: dg1: dgfea.shape:{dgfea.shape}, shapecode: {shapecode.shape}")
-
+        # print(f"Inside PointDecoderDoppler: dg1: dgfea.shape:{dgfea.shape}, shapecode: {shapecode.shape}")
         # rel_fea: Batch by 64 by Number
         rel_fea = dgfea.view(B,-1,64).permute(0,2,1)
-        print(f"Inside PointDecoderDoppler: After view: rel_fea.shape:{rel_fea.shape}, shapecode: {shapecode.shape}")
-
+        # print(f"Inside PointDecoderDoppler: After view: rel_fea.shape:{rel_fea.shape}, shapecode: {shapecode.shape}")
         point_fea = torch.cat((shapecode, rel_fea), -2)
-        print(f"Inside PointDecoderDoppler: After Cat: point_fea.shape:{point_fea.shape}, shapecode: {shapecode.shape}")
-
+        # print(f"Inside PointDecoderDoppler: After Cat: point_fea.shape:{point_fea.shape}, shapecode: {shapecode.shape}")
         x1 = self.mlp_1(point_fea) # B by 128 by N
-        print(f"Inside PointDecoderDoppler: mlp1: x1.shape:{x1.shape}, shapecode: {shapecode.shape}")
-
+        # print(f"Inside PointDecoderDoppler: mlp1: x1.shape:{x1.shape}, shapecode: {shapecode.shape}")
         x_expand = self.ps(x1) # B by 128 by N*upscale 
-        print(f"Inside PointDecoderDoppler: ConvTranspose: x_expand.shape:{x_expand.shape}, shapecode: {shapecode.shape}")
+        # print(f"Inside PointDecoderDoppler: ConvTranspose: x_expand.shape:{x_expand.shape}, shapecode: {shapecode.shape}")
         out = self.mlp_2(x_expand)  # B by 3 by N*upscale
-        print(f"Inside PointDecoderDoppler: mlp2: out.shape:{out.shape}, shapecode: {shapecode.shape}")
-
+        # print(f"Inside PointDecoderDoppler: mlp2: out.shape:{out.shape}, shapecode: {shapecode.shape}")
         out = out+torch.repeat_interleave(pt, self.upscale, dim=2)
         # rescale xyz for each patch
         #torch.sigmoid(out)
-        print(f"Inside PointDecoderDoppler: After Interleave: out.shape:{out.shape}, shapecode: {shapecode.shape}")
-
+        # print(f"Inside PointDecoderDoppler: After Interleave: out.shape:{out.shape}, shapecode: {shapecode.shape}")
         return out   
 
 
 
-class DownsamplePoints(nn.Module):
+class DownsamplePointsPower(nn.Module):
     def __init__(self, num_input_points=16384, num_output_points=1024):
-        super(DownsamplePoints, self).__init__()
+        super(DownsamplePointsPower, self).__init__()
         self.num_input_points = num_input_points
         self.num_output_points = num_output_points
         # Downsampling layer for pd_points
-        self.pd_points_downsample = nn.Conv1d(in_channels=3, out_channels=3, kernel_size=512, stride=2)
+        self.pd_points_downsample = nn.Conv1d(in_channels=4, out_channels=4, kernel_size=512, stride=2)
 
-        self.fc = nn.Linear(1601 * 3, 1024 * 3)
+        self.fc = nn.Linear(1601 * 4, 1024 * 4)
 
     def forward(self, score, pd_points, ini_points):
         """
@@ -369,84 +359,30 @@ class DownsamplePoints(nn.Module):
         ini_points: [16, 64, 3] (unchanged)
         """
         batch_size = pd_points.shape[0]
-        print("Batch Size: ", batch_size)
-        print("Inside Downsample: ", "Before pd_points_downsample pd_points.shape: ", pd_points.shape)
+        # print("Batch Size: ", batch_size)
+        # print("Inside Downsample: ", "Before pd_points_downsample pd_points.shape: ", pd_points.shape)
         pd_points = pd_points.permute(0, 2, 1)
-        print("Inside Downsample: ", "After permute_1 pd_points.shape: ", pd_points.shape)
-
+        # print("Inside Downsample: ", "After permute_1 pd_points.shape: ", pd_points.shape)
         pd_points = self.pd_points_downsample(pd_points)
-        print("Inside Downsample: ", "After pd_points_downsample_1 pd_points.shape: ", pd_points.shape)
+        # print("Inside Downsample: ", "After pd_points_downsample_1 pd_points.shape: ", pd_points.shape)
         pd_points = self.pd_points_downsample(pd_points)
-        print("Inside Downsample: ", "After pd_points_downsample_2 pd_points.shape: ", pd_points.shape)
+        # print("Inside Downsample: ", "After pd_points_downsample_2 pd_points.shape: ", pd_points.shape)
         pd_points = self.pd_points_downsample(pd_points)
-        print("Inside Downsample: ", "After pd_points_downsample_3 pd_points.shape: ", pd_points.shape)
-
+        # print("Inside Downsample: ", "After pd_points_downsample_3 pd_points.shape: ", pd_points.shape)
         pd_points = pd_points.view(batch_size, -1)
-        print("Inside Downsample: ", "After multiplication axis 3 pd_points.shape: ", pd_points.shape)
-
+        # print("Inside Downsample: ", "After multiplication axis 3 pd_points.shape: ", pd_points.shape)
         pd_points = self.fc(pd_points)  # [16, 1024 * 3]
-        print("Inside Downsample: ", "After dense layeer pd_points.shape: ", pd_points.shape)
-
-        pd_points = pd_points.view(batch_size, 3, 1024)
-        print("Inside Downsample: ", "After final reshape pd_points.shape: ", pd_points.shape)
-
-
+        # print("Inside Downsample: ", "After dense layer pd_points.shape: ", pd_points.shape)
+        pd_points = pd_points.view(batch_size, 4, 1024)
+        # print("Inside Downsample: ", "After final reshape pd_points.shape: ", pd_points.shape)
         pd_points = pd_points.permute(0, 2, 1)
-        print("Inside Downsample: ", "After permute_2 pd_points.shape: ", pd_points.shape)
-
-
+        # print("Inside Downsample: ", "After permute_2 pd_points.shape: ", pd_points.shape)
         return score, pd_points, ini_points  
     
-    
-class DownsampleDoppler(nn.Module):
-    def __init__(self, num_input_points=16384, num_output_points=1024):
-        super(DownsampleDoppler, self).__init__()
-        self.num_input_points = num_input_points
-        self.num_output_points = num_output_points
-        # Downsampling layer for pd_points
-        self.pd_Doppler_downsample = nn.Conv1d(in_channels=1, out_channels=1, kernel_size=512, stride=2)
-
-        self.fc = nn.Linear(1601 * 1, 1024 * 1)
-
-    def forward(self, score, pd_Doppler, ini_points):
-        """
-        score: [16384, 1]
-        pd_Doppler: [16, 16384, 1]
-        ini_points: [16, 64, 3] (unchanged)
-        """
-        batch_size = pd_Doppler.shape[0]
-        print("Batch Size: ", batch_size)
-        print("Inside Downsample: ", "Before pd_Doppler_downsample pd_Doppler.shape: ", pd_Doppler.shape)
-        pd_Doppler = pd_Doppler.permute(0, 2, 1)
-        print("Inside Downsample: ", "After permute_1 pd_Doppler.shape: ", pd_Doppler.shape)
-
-        pd_Doppler = self.pd_Doppler_downsample(pd_Doppler)
-        print("Inside Downsample: ", "After pd_Doppler_downsample_1 pd_Doppler.shape: ", pd_Doppler.shape)
-        pd_Doppler = self.pd_Doppler_downsample(pd_Doppler)
-        print("Inside Downsample: ", "After pd_Doppler_downsample_2 pd_Doppler.shape: ", pd_Doppler.shape)
-        pd_Doppler = self.pd_Doppler_downsample(pd_Doppler)
-        print("Inside Downsample: ", "After pd_Doppler_downsample_3 pd_Doppler.shape: ", pd_Doppler.shape)
-
-        pd_Doppler = pd_Doppler.view(batch_size, -1)
-        print("Inside Downsample: ", "After multiplication axis 3 pd_Doppler.shape: ", pd_Doppler.shape)
-
-        pd_Doppler = self.fc(pd_Doppler)  # [16, 1024 * 3]
-        print("Inside Downsample: ", "After dense layeer pd_Doppler.shape: ", pd_Doppler.shape)
-
-        pd_Doppler = pd_Doppler.view(batch_size, 1, 1024)
-        print("Inside Downsample: ", "After final reshape pd_Doppler.shape: ", pd_Doppler.shape)
-
-
-        pd_Doppler = pd_Doppler.permute(0, 2, 1)
-        print("Inside Downsample: ", "After permute_2 pd_Doppler.shape: ", pd_Doppler.shape)
-
-
-        return score, pd_Doppler, ini_points  
-    
-
 class Autoencoder(nn.Module):
-    def __init__(self):
+    def __init__(self,device):
         super(Autoencoder, self).__init__()
+        self.device = device
         self.score_estimator = NoiseScoreNet()
         self.shape_extractor = MMGraphExtractor()
         self.seed_gen = SeedGenerator(dim_feat=512, num_pc=64)
@@ -455,14 +391,8 @@ class Autoencoder(nn.Module):
         self.decoder4 = PointDecoderDoppler(upscale=8)
         self.decoder3 = PointDecoderDoppler(upscale=2)
 
-        # self.encoderscore_estimator = NoiseScoreNetEncoder()
-        # self.encodershape_extractor = MMGraphGenerator()
-        # self.encoderseed_gen = SeedCompressor(dim_feat=512, num_pc=64)
-        # self.encoder2 = PointEncoder(downscale=4)
-        # self.encoder = PointEncoder(downscale=8)
-
-        self.pdPointsDownsample = DownsamplePoints()
-        self.pdDopplerDownsample = DownsampleDoppler()
+        self.pdPointsDownsample = DownsamplePointsPower()
+        # self.pdDopplerDownsample = DownsampleDoppler()
 
     def forward(self,x_ini, x_pos, x_pi):
 
@@ -474,63 +404,60 @@ class Autoencoder(nn.Module):
         y: complete pcd without color
             : pos
         '''
-        print("Input: ", "x_ini.shape: ", x_ini.shape, "x_pos.shape: ",x_pos.shape, "x_pi.shape: ", x_pi.shape)
+        # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        # print("Input: ", "x_ini.shape: ", x_ini.shape, "x_pos.shape: ",x_pos.shape, "x_pi.shape: ", x_pi.shape)
         ## feature extractor
         batch_num = torch.max(x_pi) + 1
-        print("batch_num.shape: ", batch_num)
+        # print("batch_num.shape: ", batch_num)
         #x_fea = x_fea.T.contiguous() 
         x_fea, score = self.score_estimator(x_pos.squeeze(),x_pos.squeeze(), x_pi)
-        print("score_estimator: ", "x_fea.shape: ",x_fea.shape,"score.shape: ",score.shape)
+        # print("score_estimator: ", "x_fea.shape: ",x_fea.shape,"score.shape: ",score.shape)
         shape_fea = self.shape_extractor(x_fea, x_pos, score.squeeze(), x_pi)
-        
-        print("After  shape_extractor : shape_fea.shape: ",shape_fea.shape)
+        # print("After  shape_extractor : shape_fea.shape: ",shape_fea.shape)
         ## point cloud reconstruction
         shape_fea = shape_fea.view(batch_num,-1,1)
-        print("Afer view shape_fea.shape: ",shape_fea.shape)
+        # print("Afer view shape_fea.shape: ",shape_fea.shape)
         init_point = self.seed_gen(shape_fea)
-        print("SeedGen: ","ini_points: ", init_point.shape)
-        print("===============================================================")
+        # print("SeedGen: ","ini_points: ", init_point.shape)
+        # print("===============================================================")
         pd_point = self.decoder(init_point,shape_fea)
-        print("After Decoder: ", "pd_points: ", pd_point.shape, "ini_points: ", init_point.shape)
-        print("===============================================================")
+        # print("After Decoder: ", "pd_points: ", pd_point.shape, "ini_points: ", init_point.shape)
+        # print("===============================================================")
         pd_point = self.decoder2(pd_point,shape_fea)
-        print("After Decoder2_1: ", "pd_points: ", pd_point.shape, "ini_points: ", init_point.shape)
-        print("===============================================================")
+        # print("After Decoder2_1: ", "pd_points: ", pd_point.shape, "ini_points: ", init_point.shape)
+        # print("===============================================================")
         pd_point = self.decoder2(pd_point,shape_fea)
-        print("After Decoder2_2: ", "pd_points: ", pd_point.shape, "ini_points: ", init_point.shape)
-        print("===============================================================")
-        print(f"Doppler: After view ini_doppler.shape: {x_ini.shape}")
+        # print("After Decoder2_2: ", "pd_points: ", pd_point.shape, "ini_points: ", init_point.shape)
+        # print("===============================================================")
+        # print(f"Doppler: After view ini_doppler.shape: {x_ini.shape}")
         ini_doppler = x_ini.view(batch_num,-1,1)
-        print(f"Doppler: After view ini_doppler.shape: {ini_doppler.shape}")
+        # print(f"Doppler: After view ini_doppler.shape: {ini_doppler.shape}")
         ini_doppler = ini_doppler.permute(0,2,1)
-        print(f"Doppler: After permute ini_doppler.shape: {ini_doppler.shape}")
-        print("===============================================================")
-
+        # print(f"Doppler: After permute ini_doppler.shape: {ini_doppler.shape}")
+        # print("===============================================================")
         pd_doppler = self.decoder3(ini_doppler,shape_fea)
-        print(f"After Doppler Decoder3_1: pd_doppler.shape: {pd_doppler.shape}, ini_doppler: {ini_doppler.shape})")
-
-        
-        print("===============================================================")
+        # print(f"After Doppler Decoder3_1: pd_doppler.shape: {pd_doppler.shape}, ini_doppler: {ini_doppler.shape})")        
+        # print("===============================================================")
         pd_doppler = self.decoder4(pd_doppler,shape_fea)
-        print(f"After Doppler Decoder3_2: pd_doppler.shape: {pd_doppler.shape}, ini_doppler: {ini_doppler.shape})")
-
-        
-        print("===============================================================")
-
+        # print(f"After Doppler Decoder3_2: pd_doppler.shape: {pd_doppler.shape}, ini_doppler: {ini_doppler.shape})")
+        # print("===============================================================")
         #x_ini_coarse = x_ini.view(-1,1,3).repeat(1,init_point.size(2),1)
         #ini_points = init_point.view(batch_num,-1,3)
+
+        pd_pointspower = torch.cat((pd_point,pd_doppler),dim=1)
+
         ini_points = init_point.permute(0, 2, 1).contiguous()
         pd_points = pd_point.permute(0, 2, 1).contiguous()
         pd_doppler = pd_doppler.permute(0, 2, 1).contiguous()
+        pd_pointspower = pd_pointspower.permute(0, 2, 1).contiguous()
+        # print("After Permute: ", "score.shape: ", score.shape, "pd_points: ", pd_points.shape, "ini_points: ", ini_points.shape)
+        scoreEncoded,pd_pointspowerEncoded,ini_pointsEncoded = self.pdPointsDownsample(score,pd_pointspower,ini_points)
+        # print("After pdPointsDownsample: ", "scoreEncoded.shape: ",scoreEncoded.shape, "pd_pointspowerEncoded: ", pd_pointspowerEncoded.shape, "ini_pointspowerEncoded: ", ini_pointsEncoded.shape)
+        # print("===============================================================")
+        pd_pointsEncoded = pd_pointspowerEncoded[:,:,:3]
+        pd_DopplerEncoded = pd_pointspowerEncoded[:,:,3:]
+        # print("After pdDopplerDownsample: ", "pd_pointsEncoded.shape:",pd_pointsEncoded.shape, "pd_DopplerEncoded: ", pd_DopplerEncoded.shape, "ini_pointsEncoded: ", ini_pointsEncoded.shape)
 
-        print("After Permute: ", "score.shape: ", score.shape, "pd_points: ", pd_points.shape, "ini_points: ", ini_points.shape)
-
-        scoreEncoded,pd_pointsEncoded,ini_pointsEncoded = self.pdPointsDownsample(score,pd_points,ini_points)
-        print("After pdPointsDownsample: ", "scoreEncoded.shape: ",scoreEncoded.shape, "pd_pointsEncoded: ", pd_pointsEncoded.shape, "ini_pointsEncoded: ", ini_pointsEncoded.shape)
-        print("===============================================================")
-        scoreEncoded,pd_DopplerEncoded,ini_pointsEncoded = self.pdDopplerDownsample(score,pd_doppler,ini_points)
-        print("After pdPointsDownsample: ", "scoreEncoded.shape: ",scoreEncoded.shape, "pd_DopplerEncoded: ", pd_DopplerEncoded.shape, "ini_pointsEncoded: ", ini_pointsEncoded.shape)
-        
         return score,ini_points,pd_points,pd_doppler,scoreEncoded,pd_pointsEncoded,pd_DopplerEncoded,ini_pointsEncoded
 
         
