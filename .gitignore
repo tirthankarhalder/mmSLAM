@@ -30,6 +30,7 @@ animations/
 *.csv
 *.dat
 *.pkl
+*.npy
 fig/
 dataX4/
 datasets copy/

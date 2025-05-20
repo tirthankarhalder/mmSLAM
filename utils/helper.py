@@ -16,6 +16,7 @@ from mmwave.dataloader import DCA1000
 import mmwave.dsp as dsp
 from mmwave.tracking import EKF
 from mmwave.dsp.doppler_processing import separate_tx
+from mmwave.dsp.utils import Window
 
 # def read8byte(x):
 #     return struct.unpack('<hhhh', x)
@@ -188,6 +189,100 @@ def generate_pcd(filename, info_dict):
 
 
 
+
+def generate_pcd_time_openradar(filename, info_dict, fixedPoint = False,fixedPointVal=1000):
+    range_resolution, bandwidth = dsp.range_resolution(cfg.NUM_RANGE_BINS)
+
+    NUM_FRAMES = info_dict[' Nf'][0]
+    with open(filename, 'rb') as ADCBinFile: 
+            frames = np.frombuffer(ADCBinFile.read(cfg.FRAME_SIZE*4*NUM_FRAMES), dtype=np.uint16)
+    all_data = frame_reshape(frames, NUM_FRAMES)
+    num_vec, steering_vec = dsp.gen_steering_vec(cfg.ANGLE_RANGE, cfg.ANGLE_RES, cfg.VIRT_ANT)
+    # tracker = EKF()
+    pointcloud = []
+    frameID = 0
+    pcd_datas = []
+    time_frames = []
+    rangeResult = []
+    dopplerResult = []
+    rangeAzimuthzResult = []
+    rawHeatmap = []
+    powerProfileValues = []
+    snrs = []
+    start_time = filename.split('/')[-1].split('.')[0].split('drone_')[-1][:19]
+    start_time_obj = datetime.strptime(start_time,'%Y-%m-%d_%H_%M_%S')
+    for adc_data in all_data:
+        print(f"Frame initialized: {frameID} {filename}")
+        time_current = start_time_obj+timedelta(seconds=frameID*(info_dict["periodicity"][0])/1000)
+        time_frames.append(time_current.strftime('%Y-%m-%d %H_%M_%S.%f'))
+        frameID+=1
+        radar_cube = dsp.range_processing(adc_data)
+        # mean = radar_cube.mean(0)
+        # radar_cube = radar_cube - mean  
+        # rangeResult.append(radar_cube)
+        det_matrix, aoa_input = dsp.doppler_processing(radar_cube, num_tx_antennas=3, clutter_removal_enabled=True, window_type_2d=Window.HAMMING)
+        dopplerResult.append(det_matrix)
+        # (4) Object Detection
+        # --- CFAR, SNR is calculated as well.
+        fft2d_sum = det_matrix.astype(np.int64)
+        thresholdDoppler, noiseFloorDoppler = np.apply_along_axis(func1d=dsp.ca_,
+                                                                axis=0,
+                                                                arr=fft2d_sum.T,
+                                                                l_bound=1.5,
+                                                                guard_len=4,
+                                                                noise_len=16)
+
+        thresholdRange, noiseFloorRange = np.apply_along_axis(func1d=dsp.ca_,
+                                                            axis=0,
+                                                            arr=fft2d_sum,
+                                                            l_bound=2.5,
+                                                            guard_len=4,
+                                                            noise_len=16)
+
+        thresholdDoppler, noiseFloorDoppler = thresholdDoppler.T, noiseFloorDoppler.T
+        det_doppler_mask = (det_matrix > thresholdDoppler)
+        det_range_mask = (det_matrix > thresholdRange)
+
+        # Get indices of detected peaks
+        full_mask = (det_doppler_mask & det_range_mask)
+        det_peaks_indices = np.argwhere(full_mask == True)
+
+        # peakVals and SNR calculation
+        peakVals = fft2d_sum[det_peaks_indices[:, 0], det_peaks_indices[:, 1]]
+        snr = peakVals - noiseFloorRange[det_peaks_indices[:, 0], det_peaks_indices[:, 1]]
+        snrs.append(snr)
+        dtype_location = '(' + str(cfg.NUM_TX) + ',)<f4'
+        dtype_detObj2D = np.dtype({'names': ['rangeIdx', 'dopplerIdx', 'peakVal', 'location', 'SNR'],
+                                'formats': ['<i4', '<i4', '<f4', dtype_location, '<f4']})
+        detObj2DRaw = np.zeros((det_peaks_indices.shape[0],), dtype=dtype_detObj2D)
+        detObj2DRaw['rangeIdx'] = det_peaks_indices[:, 0].squeeze()
+        detObj2DRaw['dopplerIdx'] = det_peaks_indices[:, 1].squeeze()
+        detObj2DRaw['peakVal'] = peakVals.flatten()
+        detObj2DRaw['SNR'] = snr.flatten()
+        detObj2DRaw = dsp.prune_to_peaks(detObj2DRaw, det_matrix, cfg.NUM_DOPPLER_BINS, reserve_neighbor=True)
+
+        # --- Peak Grouping
+        detObj2D = dsp.peak_grouping_along_doppler(detObj2DRaw, det_matrix, cfg.NUM_DOPPLER_BINS)
+        SNRThresholds2 = np.array([[2, 23], [10, 11.5], [35, 16.0]])
+        peakValThresholds2 = np.array([[4, 275], [1, 400], [500, 0]])
+        detObj2D = dsp.range_based_pruning(detObj2D, SNRThresholds2, peakValThresholds2, cfg.ADC_SAMPLES, 0.5, range_resolution)
+
+        azimuthInput = aoa_input[detObj2D['rangeIdx'], :, detObj2D['dopplerIdx']]
+        rangeAzimuthzResult.append(azimuthInput)
+
+        x, y, z = dsp.naive_xyz(azimuthInput.T)
+        # print(x,y,z)
+        xyzVecN = np.zeros((3, x.shape[0]))
+        xyzVecN[0] = x * range_resolution * detObj2D['rangeIdx']
+        xyzVecN[1] = y * range_resolution * detObj2D['rangeIdx']
+        xyzVecN[2] = z * range_resolution * detObj2D['rangeIdx']
+        Psi, Theta, Ranges, xyzVec = dsp.beamforming_naive_mixed_xyz(azimuthInput, detObj2D['rangeIdx'],
+                                                                    range_resolution, method='Bartlett')
+        pointcloud.append(xyzVec)
+        # if frameID==5:
+        #     break
+    return pointcloud, time_frames
+            
 
 def generate_pcd_time(filename, info_dict, fixedPoint = False,fixedPointVal=1000):
     NUM_FRAMES = info_dict[' Nf'][0]

@@ -69,17 +69,16 @@ def density_based_downsampling(pcd, target_num_points,voxelSize):
     return downsampled_pcd
 
 
-def pointcloud_openradar(file_name):
+def pointcloud_time(file_name):
     print(f"{file_name} initialized")
     info_dict = get_info(file_name)
     # print_info(info_dict)
-    run_data_read_only_sensor(info_dict)
+    run_data_read_only_sensor(file_name,info_dict)
     bin_filename = './datasets/radar_data/only_sensor_' + info_dict['filename'][0]
     # make fixedPoint True get fixed number of points
     pcd_data, time= generate_pcd_time(bin_filename, info_dict,fixedPoint=True,fixedPointVal=1000)
     # print(pcd_data.shape)
     return pcd_data, time
-
 
 def process_bin_file(file, radarFilePath):
     """Process a single bin file and generate a CSV."""
@@ -90,15 +89,15 @@ def process_bin_file(file, radarFilePath):
     binFilepower = []
     binFiledoppler = []
     binFilePath = radarFilePath + file
-    gen, timestamps= pointcloud_openradar(file_name=binFilePath)
+    gen, timestamps= pointcloud_time(file_name=binFilePath)
 
     for pointcloud in gen:
-        binFileFrame.append(pointcloud[:, :3])  # Sliced first 3 as x, y, z
-        binFiledoppler.append(pointcloud[:,2])
-        binFilesnr.append(pointcloud[:,3])
-        binFilerange.append(pointcloud[:,4])
-        binFileangle.append(pointcloud[:,5])
-        binFilepower.append(pointcloud[:,6])
+        binFileFrame.append(pointcloud[:3])  # Sliced first 3 as x, y, z
+        binFiledoppler.append(pointcloud[3])
+        binFilesnr.append(pointcloud[4])
+        binFilerange.append(pointcloud[5])
+        binFileangle.append(pointcloud[6])
+        binFilepower.append(pointcloud[7])
 
     # Create a DataFrame for this bin file
     df = pd.DataFrame()
@@ -109,6 +108,45 @@ def process_bin_file(file, radarFilePath):
     df["range"] = binFilerange
     df["angle"] = binFileangle
     df["power"] = binFilepower
+    df['datetime'] = pd.to_datetime(df['datetime'], format='%Y-%m-%d %H_%M_%S.%f')
+
+    # Save CSV
+    saveCsv = radarFilePath + "csv_file/" + file.split(".")[0] + ".csv"
+    radarCSVDir = radarFilePath + "csv_file/"
+    if not os.path.exists(radarCSVDir):
+        os.makedirs(radarCSVDir)
+    
+    # df.to_csv(saveCsv, index=False)
+    return df  # Returning DataFrame for appending later if needed
+
+def pointcloud_time_openradar(file_name):
+    print(f"{file_name} initialized")
+    info_dict = get_info(file_name)
+    # print_info(info_dict)
+    run_data_read_only_sensor(file_name,info_dict)
+    bin_filename = './datasets/radar_data/only_sensor_' + info_dict['filename'][0]
+    # make fixedPoint True get fixed number of points
+    pcd_data, time= generate_pcd_time_openradar(bin_filename, info_dict,fixedPoint=True,fixedPointVal=1000)
+    # print(pcd_data.shape)
+    return pcd_data, time
+
+
+def process_bin_file_openradar(file, radarFilePath):
+    
+    """Process a single bin file and generate a CSV. This specifically design for to use openradar packages"""
+    binFileFrame = []
+    binFilesnr = []
+    binFilerange = []
+    binFileangle = []
+    binFilepower = []
+    binFiledoppler = []
+    binFilePath = radarFilePath + file
+    gen, timestamps= pointcloud_time_openradar(file_name=binFilePath)
+
+    # Create a DataFrame for this bin file
+    df = pd.DataFrame()
+    df["datetime"] = timestamps[:len(gen)]
+    df["radarPCD"] = gen
     df['datetime'] = pd.to_datetime(df['datetime'], format='%Y-%m-%d %H_%M_%S.%f')
 
     # Save CSV
@@ -155,7 +193,7 @@ if __name__ == "__main__":
         total_framePCD = []
         total_frameRadarDF = pd.DataFrame(columns=["datetime","radarPCD"])
         with concurrent.futures.ProcessPoolExecutor(max_workers= 5) as executor:
-            results = list(executor.map(process_bin_file, filteredBinFile, [radarFilePath] * len(filteredBinFile)))
+            results = list(executor.map(process_bin_file_openradar, filteredBinFile, [radarFilePath] * len(filteredBinFile)))
 
         for df in results:
             total_frameRadarDF = pd.concat([total_frameRadarDF, df], ignore_index=True)#total_frameRadarDF.append(df, ignore_index=True)
@@ -172,7 +210,7 @@ if __name__ == "__main__":
 
 
         for fileDepthFrame, fileDepthFrameTimestamps in results:
-            print("Time Stamp: ",fileDepthFrameTimestamps)
+            # print("Time Stamp: ",fileDepthFrameTimestamps)
             totalDepthFrame += fileDepthFrame
             totalDepthFrameTimestamps += fileDepthFrameTimestamps
 
@@ -186,10 +224,11 @@ if __name__ == "__main__":
         total_frameDepth.to_csv(processedDataFolder_name + "total_frameDepth.csv",index=False)
         del totalDepthFrameTimestamps 
 
+        print("total_frameRadarDF.shape",total_frameRadarDF.shape, "total_frameDepth.shape", total_frameDepth.shape)
 
-        print("total_frameStackedRadar.shape: ",np.stack(total_frameRadarDF["radarPCD"]).shape)
+        # print("total_frameStackedRadar.shape: ",np.stack(total_frameRadarDF["radarPCD"]).shape)
         # total_frameStackedDepth = np.stack(total_frameDepth["depthPCD"])
-        print("total_frameStackedDepth.shape: ",np.stack(total_frameDepth["depthPCD"]).shape)
+        # print("total_frameStackedDepth.shape: ",np.stack(total_frameDepth["depthPCD"]).shape)
 
         # mergerdPcdDepth = pd.merge_asof(total_frameRadarDF, total_frameDepth, on='datetime',tolerance=pd.Timedelta('600ms'), direction='nearest')
         # print("mergerdPcdDepth.shape: ",mergerdPcdDepth.shape)
@@ -223,185 +262,40 @@ if __name__ == "__main__":
 
 
         print(f"Data Processing Done and data exporte to file {processedDataFolder_name}")
-
-        startProcessingForNewData = True
-        randomDownSample = False
-        doDownSampling = True
-        doDownSampling = True
-        visulization = True
-        target_num_points = 3072
-
-        if False:
-            for index, row in tqdm(mergerdPcdDepth.iterrows(), total=len(mergerdPcdDepth), desc="Processing frames"):
-                sns.set(style="whitegrid")
-                fig1 = plt.figure(figsize=(12,7))
-                ax1 = fig1.add_subplot(111,projection='3d')
-                img1 = ax1.scatter(mergerdPcdDepth["radarPCD"][index][:,0], mergerdPcdDepth["radarPCD"][index][:,1], mergerdPcdDepth["radarPCD"][index][:,2], cmap="jet",marker='o')
-                fig1.colorbar(img1)
-                ax1.set_xlabel('X')
-                ax1.set_ylabel('Y')
-                ax1.set_zlabel('Z')
-                # ax1.set_xlim(-10, 10)
-                # ax1.set_ylim(-10, 10)
-                # ax1.set_zlim(-10, 10)
-                frameTime = mergerdPcdDepth["datetime"][index]
-                ax1.set_title(f"Radar Point Cloud Frame {index} Time {frameTime}")
-                plt.savefig(radVis + "radar_"+ str(index)+".png")
-                # plt.show()
-                plt.close()
-            for index, row in tqdm(mergerdPcdDepth.iterrows(), total=len(mergerdPcdDepth), desc="Processing frames"):
-                sns.set(style="whitegrid")
-                fig2 = plt.figure(figsize=(12,7))
-                ax2 = fig2.add_subplot(111,projection='3d')
-                img2 = ax2.scatter(mergerdPcdDepth["depthPCD"][index][:,0], mergerdPcdDepth["depthPCD"][index][:,1],mergerdPcdDepth["depthPCD"][index][:,2], cmap="viridis",marker='o')
-                fig2.colorbar(img2)
-                ax2.set_xlabel('X')
-                ax2.set_ylabel('Y')
-                ax2.set_zlabel('Z')
-                # ax2.set_xlim(-10, 10)
-                # ax2.set_ylim(-10, 10)
-                # ax2.set_zlim(-10, 10)
-                frameTime = mergerdPcdDepth["datetime"][index]
-                ax2.set_title(f"Depth Point Cloud Frame {index} Time {frameTime}")
-                plt.savefig(depVis + "depthFrame_"+ str(index)+".png")
-                # plt.show()
-                plt.close()
-
-        print("Importing Saved Data")
-        # pointcloudRadarDepth = pd.read_pickle("./mergedRadarDepth.pkl")
-        pointcloudRadarDepth = mergerdPcdDepth
-        pointcloudRadarDepth.reset_index(drop=True, inplace=True)
-
-        if False:
-
-            pointcloudRadarDepth["sampleDepth"] = None
-            if randomDownSample:
-                downsample_size = 2000  # Specify the desired downsampled size
-                # downsampled_pcd = np.empty((pointcloudRadarDepth.shape[0], downsample_size, 3))
-                for index, row in tqdm(pointcloudRadarDepth.iterrows(), total=pointcloudRadarDepth.shape[0], desc="Processing Rows"):            # print(index)
-                    indices = np.random.choice(307200, downsample_size, replace=False)  # Random indices
-                    # pointcloudRadarDepth.loc[index, "sampleDepth"] = pointcloudRadarDepth["depthPCD"].iloc[index][indices].tolist()  # Select points using the random indices
-                    pointcloudRadarDepth.at[index, "sampleDepth"] = pointcloudRadarDepth["depthPCD"].iloc[index][indices]
+        if True:
+            import cv2
+            from PIL import Image
+            folder_path = processedDataFolder_name + "visualization/testResultAll"
+            if not os.path.exists(folder_path):
+                os.makedirs(folder_path)
+                print(f"Folder '{folder_path}' created.")
             else:
-                downsampled_frames = []
-                for index, row in tqdm(pointcloudRadarDepth.iterrows(), total=pointcloudRadarDepth.shape[0], desc="Processing Rows"):
-                    pcd = o3d.geometry.PointCloud()
-                    # print(index)
-                    voxel_size = 0.05  # Adjust voxel size for desired resolution
-                    pcd.points = o3d.utility.Vector3dVector(pointcloudRadarDepth["depthPCD"][index])
-                    #density based downsampling
-                    downsampled_pcd = density_based_downsampling(pcd, target_num_points,voxelSize=0.05)
-                    downsampled_points = np.asarray(downsampled_pcd.points)
-                    # print("downsampled_points.shape",downsampled_points.shape)
-                    pointcloudRadarDepth.at[index, "sampleDepth"] = downsampled_points
-            pointcloudRadarDepth.to_pickle(processedDataFolder_name + "pointcloudRadarDepth.pkl")
-            print("Down Samling Done, pointcloudRadarDepth.pkl Exported")
-        else:
-            # pointcloudRadarDepth = pd.read_pickle(processedDataFolder_name + "pointcloudRadarDepth.pkl")
-            print("Existing Down Sampled file imported")
+                print(f"Folder '{folder_path}' already exists.")
+            #to genrate the comaprison visulization depth and rgb
+            datasetFolder = "./datasets/image_data/"
+            image_data = []
+            for subdir, _, files in os.walk(datasetFolder):
+                for file in files:
+                    if file.endswith(".jpg"):  
+                        file_path = os.path.join(subdir, file)
+                        renamedFile = file[:-4]
+                        renamedFiletimestamp = datetime.strptime(renamedFile, "%Y-%m-%d_%H_%M_%S_%f")
+                        renamedFileFormattedTime = renamedFiletimestamp.strftime("%Y-%m-%d %H:%M:%S.%f") + ".jpg"
+                        image = cv2.imread(file_path, cv2.IMREAD_COLOR)
+                        date_str, time_hr,time_min,time_sec, microseconds = file[:-4].split("_")
+                        datetime_str = f"{date_str} {time_hr}:{time_min}:{time_sec}.{microseconds}"
+                        timestamp = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S.%f")
+                        formatted_timestamp = timestamp.strftime("%Y-%m-%d %H:%M:%S.%f")
+                        image_data.append([formatted_timestamp, image, renamedFileFormattedTime, file_path])
 
+            rgbCsvDF = pd.DataFrame(image_data, columns=[ "datetime", "rgbImage","rgbFilename", "rgbFilepath"])
+            rgbCsvDF["datetime"] = pd.to_datetime(rgbCsvDF["datetime"], format="%Y-%m-%d %H:%M:%S.%f")
+            rgbCsvPath = os.path.join(processedDataFolder_name, "rgbImage.csv")
+            rgbCsvDF.to_csv(rgbCsvPath, index=False)
+            rgbCsvDF.to_pickle(processedDataFolder_name + "rgbImage.pkl")
+            print(f"pkl file saved at: {rgbCsvPath}")
 
-        if False:
-            # for index,row in pointcloudRadarDepth.iterrows():
-            for index, row in tqdm(pointcloudRadarDepth.iterrows(), total=len(pointcloudRadarDepth), desc="Processing frames"):
-                frameIDX = np.random.randint(0, pointcloudRadarDepth.shape[0])
-                distancesRadar = np.linalg.norm(pointcloudRadarDepth["radarPCD"][frameIDX], axis=1)
-                normalized_distances = (distancesRadar - distancesRadar.min()) / (distancesRadar.max() - distancesRadar.min())
-                sns.set(style="whitegrid")
-                fig = plt.figure(figsize=(12,6))
-                ax1 = fig.add_subplot(131,projection='3d')
-                distancesRadar = np.linalg.norm(pointcloudRadarDepth["radarPCD"][frameIDX], axis=1)
-                normalized_distancesRadar = (distancesRadar - distancesRadar.min()) / (distancesRadar.max() - distancesRadar.min())
-                img1 = ax1.scatter(pointcloudRadarDepth["radarPCD"][frameIDX][:, 0], pointcloudRadarDepth["radarPCD"][frameIDX][:, 1], pointcloudRadarDepth["radarPCD"][frameIDX][:, 2], c=normalized_distancesRadar,cmap = 'viridis', marker='o')
-                fig.colorbar(img1)
-                ax1.set_title('Radar PCD')
-                ax1.set_xlabel('X')
-                ax1.set_ylabel('Y')
-                ax1.set_zlabel('Z')
-
-                ax2 = fig.add_subplot(132,projection='3d')
-                distancesDepth = np.linalg.norm(pointcloudRadarDepth["depthPCD"][frameIDX], axis=1)
-                normalized_distancesDepth = (distancesDepth - distancesDepth.min()) / (distancesDepth.max() - distancesDepth.min())
-                img2 = ax2.scatter(pointcloudRadarDepth["depthPCD"][frameIDX][:, 0], pointcloudRadarDepth["depthPCD"][frameIDX][:, 1], pointcloudRadarDepth["depthPCD"][frameIDX][:, 2], c=normalized_distancesDepth, cmap = 'viridis',marker='o')
-                fig.colorbar(img2)
-                ax2.set_title('Depth Camera PCD')
-                ax2.set_xlabel('X')
-                ax2.set_ylabel('Y')
-                ax2.set_zlabel('Z')
-
-                ax3 = fig.add_subplot(133,projection='3d')
-                distancesSampleDepth = np.linalg.norm(pointcloudRadarDepth["sampleDepth"][frameIDX], axis=1)
-                normalized_distancesSampleDepth = (distancesSampleDepth - distancesSampleDepth.min()) / (distancesSampleDepth.max() - distancesSampleDepth.min())
-                img3 = ax3.scatter(pointcloudRadarDepth["sampleDepth"][frameIDX][:, 0], pointcloudRadarDepth["sampleDepth"][frameIDX][:, 1], pointcloudRadarDepth["sampleDepth"][frameIDX][:, 2], c=normalized_distancesSampleDepth, cmap = 'viridis',marker='o')
-                fig.colorbar(img3)
-                ax3.set_title('DownSampled Depth PCD')
-                ax3.set_xlabel('X')
-                ax3.set_ylabel('Y')
-                ax3.set_zlabel('Z')
-                plt.tight_layout()
-                plt.savefig(processedDataFolder_name  + f"visualization/downSampledRadarDepth/radarDepth_{target_num_points}_{str(frameIDX)}.png")
-                # plt.show()
-                plt.close()
-                if index ==3:
-                    break
-            print("Sample Visulization Saved")
-
-
-        pkl_file = processedDataFolder_name + "mergedRadarDepth.pkl" 
-
-        outputDirTrain = processedDataFolder_name + "droneData_Train/processedData/"  
-        outputDirTest = processedDataFolder_name + "droneData_Test/processedData/"  
-
-        txt_file_train = processedDataFolder_name + "droneData_Train/datalist.txt" 
-        txt_file_test = processedDataFolder_name + "droneData_Test/datalist.txt" 
-
-        os.makedirs(outputDirTrain, exist_ok=True)
-        os.makedirs(outputDirTest, exist_ok=True)
-
-        df = pd.read_pickle(pkl_file)
-        df.reset_index(drop=True, inplace=True)
-
-        if not all(col in df.columns for col in ['radarPCD', 'depthPCD', 'datetime','power']):
-            raise ValueError("PKL file must contain 'radarPCD', 'depthPCD', and 'datetime' columns.")
-
-
-        # Split data into train (80%) and test (20%)
-        train_size = int(0.8 * len(df))  # Adjust percentage as needed
-        indices = np.arange(len(df))
-        np.random.shuffle(indices)
-
-        train_indices = indices[:train_size]
-        test_indices = indices[train_size:]
-
-        with open(txt_file_train, "w") as train_out, open(txt_file_test, "w") as test_out:
-            for idx in tqdm(train_indices, desc="Saving Train Data", total=len(train_indices)):
-                row = df.iloc[idx]
-                mat_file_name = f"{idx + 1}_mmwave.mat"
-                mat_file_path = os.path.join(outputDirTrain, mat_file_name)
-
-                savemat(mat_file_path, {
-                    'radarPCD': row['radarPCD'],
-                    'depthPCD': row['depthPCD'],
-                    'datetime': row['datetime'],
-                    'power': row['power']
-                })
-                train_out.write(mat_file_path + "\n")
-
-            for idx in tqdm(test_indices, desc="Saving Test Data", total=len(test_indices)):
-                row = df.iloc[idx]
-                mat_file_name = f"{idx + 1}_mmwave.mat"
-                mat_file_path = os.path.join(outputDirTest, mat_file_name)
-
-                savemat(mat_file_path, {
-                    'radarPCD': row['radarPCD'],
-                    'depthPCD': row['depthPCD'],
-                    'datetime': row['datetime'],
-                    'power': row['power']
-                })
-                test_out.write(mat_file_path + "\n")
-
-        print(f"Exported {len(train_indices)} train .mat files to '{outputDirTrain}' and recorded in '{txt_file_train}'.")
-        print(f"Exported {len(test_indices)} test .mat files to '{outputDirTest}' and recorded in '{txt_file_test}'.")
+        
     except Exception as e:
         print("An unexpected error occurred:", e)
     finally:
